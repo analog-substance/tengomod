@@ -17,7 +17,7 @@ func Module() map[string]tengo.Object {
 }
 
 func hostname(args ...tengo.Object) (tengo.Object, error) {
-	rawURL, err := interop.TStringToGoString(args[0], "url")
+	rawURL, err := interop.TStrToGoStr(args[0], "url")
 	if err != nil {
 		return nil, err
 	}
@@ -27,5 +27,5 @@ func hostname(args ...tengo.Object) (tengo.Object, error) {
 		return interop.GoErrToTErr(err), nil
 	}
 
-	return interop.GoStringToTString(parsedURL.Hostname()), nil
+	return interop.GoStrToTStr(parsedURL.Hostname()), nil
 }

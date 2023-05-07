@@ -14,8 +14,8 @@ func GoTSliceToGoInterfaceSlice(items []tengo.Object) []interface{} {
 	return slice
 }
 
-// GoStringSliceToTArray converts a golang string slice into a tengo Array
-func GoStringSliceToTArray(slice []string) tengo.Object {
+// GoStrSliceToTArray converts a golang string slice into a tengo Array
+func GoStrSliceToTArray(slice []string) tengo.Object {
 	var values []tengo.Object
 	for _, s := range slice {
 		values = append(values, &tengo.String{Value: s})
@@ -38,13 +38,13 @@ func GoIntSliceToTArray(slice []int) tengo.Object {
 	}
 }
 
-// TArrayToGoStringSlice converts a tengo Array into a golang string slice
-func TArrayToGoStringSlice(obj tengo.Object, name string) ([]string, error) {
+// TArrayToGoStrSlice converts a tengo Array into a golang string slice
+func TArrayToGoStrSlice(obj tengo.Object, name string) ([]string, error) {
 	switch array := obj.(type) {
 	case *tengo.Array:
-		return GoTSliceToGoStringSlice(array.Value, name)
+		return GoTSliceToGoStrSlice(array.Value, name)
 	case *tengo.ImmutableArray:
-		return GoTSliceToGoStringSlice(array.Value, name)
+		return GoTSliceToGoStrSlice(array.Value, name)
 	default:
 		return nil, tengo.ErrInvalidArgumentType{
 			Name:     name,
@@ -54,7 +54,7 @@ func TArrayToGoStringSlice(obj tengo.Object, name string) ([]string, error) {
 	}
 }
 
-// TArrayToGoStringSlice converts a tengo Array into a golang string slice
+// TArrayToGoInterfaceSlice converts a tengo Array into a golang string slice
 func TArrayToGoInterfaceSlice(obj tengo.Object, name string) ([]interface{}, error) {
 	switch array := obj.(type) {
 	case *tengo.Array:
@@ -102,8 +102,8 @@ func TArrayToGoIntSlice(obj tengo.Object, name string) ([]int, error) {
 	}
 }
 
-// GoTSliceToGoStringSlice converts a slice of tengo Objects into a golang string slice
-func GoTSliceToGoStringSlice(slice []tengo.Object, name string) ([]string, error) {
+// GoTSliceToGoStrSlice converts a slice of tengo Objects into a golang string slice
+func GoTSliceToGoStrSlice(slice []tengo.Object, name string) ([]string, error) {
 	var strSlice []string
 	for idx, obj := range slice {
 		item, ok := tengo.ToString(obj)
@@ -137,8 +137,8 @@ func GoTSliceToGoIntSlice(slice []tengo.Object, name string) ([]int, error) {
 	return intSlice, nil
 }
 
-// TMapToGoStringMapString converts a tengo object into a golang map[string]string
-func TMapToGoStringMapString(obj tengo.Object, name string) (map[string]string, error) {
+// TMapToGoStrMapStr converts a tengo object into a golang map[string]string
+func TMapToGoStrMapStr(obj tengo.Object, name string) (map[string]string, error) {
 	var objMap map[string]tengo.Object
 	switch o := obj.(type) {
 	case *tengo.Map:
@@ -170,8 +170,8 @@ func TMapToGoStringMapString(obj tengo.Object, name string) (map[string]string, 
 	return m, nil
 }
 
-// TStringToGoString converts a tengo object into a golang string
-func TStringToGoString(arg tengo.Object, name string) (string, error) {
+// TStrToGoStr converts a tengo object into a golang string
+func TStrToGoStr(arg tengo.Object, name string) (string, error) {
 	str, ok := tengo.ToString(arg)
 	if !ok {
 		return "", tengo.ErrInvalidArgumentType{
@@ -193,7 +193,8 @@ func GoErrToTErr(err error) tengo.Object {
 	}
 }
 
-func GoStringToTString(str string) tengo.Object {
+// GoStrToTStr converts a golang string to a tengo string
+func GoStrToTStr(str string) tengo.Object {
 	return &tengo.String{
 		Value: str,
 	}
@@ -253,22 +254,22 @@ func NewCallable(callable tengo.CallableFunc, validations ...ArgValidation) teng
 // into tengo CallableFunc type.
 func FuncASSSSRSp(fn func(string, string, string, string) *string) tengo.CallableFunc {
 	callable := func(args ...tengo.Object) (tengo.Object, error) {
-		s1, err := TStringToGoString(args[0], "first")
+		s1, err := TStrToGoStr(args[0], "first")
 		if err != nil {
 			return nil, err
 		}
 
-		s2, err := TStringToGoString(args[1], "second")
+		s2, err := TStrToGoStr(args[1], "second")
 		if err != nil {
 			return nil, err
 		}
 
-		s3, err := TStringToGoString(args[2], "third")
+		s3, err := TStrToGoStr(args[2], "third")
 		if err != nil {
 			return nil, err
 		}
 
-		s4, err := TStringToGoString(args[3], "fourth")
+		s4, err := TStrToGoStr(args[3], "fourth")
 		if err != nil {
 			return nil, err
 		}
@@ -755,7 +756,7 @@ func FuncASvRSsE(fn func(...string) ([]string, error)) tengo.CallableFunc {
 			return GoErrToTErr(err), nil
 		}
 
-		return GoStringSliceToTArray(res), nil
+		return GoStrSliceToTArray(res), nil
 	}
 }
 

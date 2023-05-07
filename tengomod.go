@@ -1,19 +1,67 @@
 package tengomod
 
 import (
+	"context"
+
 	"github.com/analog-substance/tengo/v2"
 	"github.com/analog-substance/tengomod/filepath"
+	"github.com/analog-substance/tengomod/os2"
+	"github.com/analog-substance/tengomod/slice"
 	"github.com/analog-substance/tengomod/url"
 	"github.com/analog-substance/tengomod/viper"
 )
 
+type moduleFactory func(*ModuleOptions) map[string]tengo.Object
+
 var (
-	builtinModules map[string]map[string]tengo.Object = map[string]map[string]tengo.Object{
-		"filepath": filepath.Module(),
-		"viper":    viper.Module(),
-		"url":      url.Module(),
+	builtinModules map[string]moduleFactory = map[string]moduleFactory{
+		"filepath": func(_ *ModuleOptions) map[string]tengo.Object {
+			return filepath.Module()
+		},
+		"viper": func(_ *ModuleOptions) map[string]tengo.Object {
+			return viper.Module()
+		},
+		"url": func(_ *ModuleOptions) map[string]tengo.Object {
+			return url.Module()
+		},
+		"slice": func(_ *ModuleOptions) map[string]tengo.Object {
+			return slice.Module()
+		},
+		"os2": func(o *ModuleOptions) map[string]tengo.Object {
+			if o.getCompiled != nil {
+				return os2.Module(o.getCompiled())
+			}
+			return os2.Module(nil, context.Background())
+		},
 	}
 )
+
+type ModuleOptions struct {
+	getCompiled func() (*tengo.Compiled, context.Context)
+	modules     []string
+}
+
+type ModuleOption func(o *ModuleOptions)
+
+func WithCompiled(compiled *tengo.Compiled, ctx context.Context) ModuleOption {
+	return func(o *ModuleOptions) {
+		o.getCompiled = func() (*tengo.Compiled, context.Context) {
+			return compiled, ctx
+		}
+	}
+}
+
+func WithCompiledFunc(fn func() (*tengo.Compiled, context.Context)) ModuleOption {
+	return func(o *ModuleOptions) {
+		o.getCompiled = fn
+	}
+}
+
+func WithModules(modules ...string) ModuleOption {
+	return func(o *ModuleOptions) {
+		o.modules = modules
+	}
+}
 
 func AllModuleNames() []string {
 	var names []string
@@ -23,13 +71,23 @@ func AllModuleNames() []string {
 	return names
 }
 
-func GetModuleMap(modules ...string) *tengo.ModuleMap {
+func GetModuleMap(opts ...ModuleOption) *tengo.ModuleMap {
+	options := &ModuleOptions{}
+	for _, opt := range opts {
+		opt(options)
+	}
+
+	modules := options.modules
+	if len(modules) == 0 {
+		modules = AllModuleNames()
+	}
+
 	moduleMap := tengo.NewModuleMap()
 
 	for _, name := range modules {
-		module, ok := builtinModules[name]
+		factory, ok := builtinModules[name]
 		if ok {
-			moduleMap.AddBuiltinModule(name, module)
+			moduleMap.AddBuiltinModule(name, factory(options))
 		}
 	}
 

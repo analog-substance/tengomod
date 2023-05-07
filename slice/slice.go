@@ -33,14 +33,14 @@ func Module() map[string]tengo.Object {
 }
 
 func sortStrings(args ...tengo.Object) (tengo.Object, error) {
-	slice, err := interop.TArrayToGoStringSlice(args[0], "slice")
+	slice, err := interop.TArrayToGoStrSlice(args[0], "slice")
 	if err != nil {
 		return nil, err
 	}
 
 	sort.Strings(slice)
 
-	return interop.GoStringSliceToTArray(slice), nil
+	return interop.GoStrSliceToTArray(slice), nil
 }
 
 func randItem(args ...tengo.Object) (tengo.Object, error) {
@@ -84,12 +84,12 @@ func randItem(args ...tengo.Object) (tengo.Object, error) {
 // }
 
 func containsString(args ...tengo.Object) (tengo.Object, error) {
-	slice, err := interop.TArrayToGoStringSlice(args[0], "slice")
+	slice, err := interop.TArrayToGoStrSlice(args[0], "slice")
 	if err != nil {
 		return nil, err
 	}
 
-	input, err := interop.TStringToGoString(args[1], "input")
+	input, err := interop.TStrToGoStr(args[1], "input")
 	if err != nil {
 		return nil, err
 	}
@@ -103,12 +103,12 @@ func containsString(args ...tengo.Object) (tengo.Object, error) {
 }
 
 func iContainsString(args ...tengo.Object) (tengo.Object, error) {
-	slice, err := interop.TArrayToGoStringSlice(args[0], "slice")
+	slice, err := interop.TArrayToGoStrSlice(args[0], "slice")
 	if err != nil {
 		return nil, err
 	}
 
-	input, err := interop.TStringToGoString(args[1], "input")
+	input, err := interop.TStrToGoStr(args[1], "input")
 	if err != nil {
 		return nil, err
 	}
