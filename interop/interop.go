@@ -184,6 +184,20 @@ func TStrToGoStr(arg tengo.Object, name string) (string, error) {
 	return str, nil
 }
 
+// TIntToGoInt converts a tengo object into a golang int
+func TIntToGoInt(arg tengo.Object, name string) (int, error) {
+	i, ok := tengo.ToInt(arg)
+	if !ok {
+		return 0, tengo.ErrInvalidArgumentType{
+			Name:     name,
+			Expected: "int(compatible)",
+			Found:    arg.TypeName(),
+		}
+	}
+
+	return i, nil
+}
+
 // GoErrToTErr converts a golang error into a tengo Error
 func GoErrToTErr(err error) tengo.Object {
 	return &tengo.Error{
@@ -832,5 +846,19 @@ func FuncASRI(fn func(string) int) tengo.CallableFunc {
 		}
 		i := fn(s1)
 		return &tengo.Int{Value: int64(i)}, nil
+	}
+}
+
+// AliasFunc is used to call the same tengo function using a different name
+func AliasFunc(obj tengo.Object, name string, src string) *tengo.UserFunction {
+	return &tengo.UserFunction{
+		Name: name,
+		Value: func(args ...tengo.Object) (tengo.Object, error) {
+			fn, err := obj.IndexGet(&tengo.String{Value: src})
+			if err != nil {
+				return nil, err
+			}
+			return fn.(*tengo.UserFunction).Value(args...)
+		},
 	}
 }

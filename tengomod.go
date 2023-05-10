@@ -5,7 +5,9 @@ import (
 
 	"github.com/analog-substance/tengo/v2"
 	"github.com/analog-substance/tengomod/filepath"
+	"github.com/analog-substance/tengomod/nmap"
 	"github.com/analog-substance/tengomod/os2"
+	"github.com/analog-substance/tengomod/set"
 	"github.com/analog-substance/tengomod/slice"
 	"github.com/analog-substance/tengomod/url"
 	"github.com/analog-substance/tengomod/viper"
@@ -32,6 +34,12 @@ var (
 				return os2.Module(o.getCompiled())
 			}
 			return os2.Module(nil, context.Background())
+		},
+		"set": func(_ *ModuleOptions) map[string]tengo.Object {
+			return set.Module()
+		},
+		"nmap": func(_ *ModuleOptions) map[string]tengo.Object {
+			return nmap.Module()
 		},
 	}
 )
