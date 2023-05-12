@@ -38,6 +38,30 @@ func GoIntSliceToTArray(slice []int) tengo.Object {
 	}
 }
 
+// GoStrMapStrToTMap converts a golang map[string]string into a tengo Map
+func GoStrMapStrToTMap(item map[string]string) tengo.Object {
+	values := make(map[string]tengo.Object)
+	for key, value := range item {
+		values[key] = &tengo.String{Value: value}
+	}
+
+	return &tengo.Map{
+		Value: values,
+	}
+}
+
+// GoStrMapStrToTMap converts a golang map[string]string into a tengo ImmutableMap
+func GoStrMapStrToTImmutMap(item map[string]string) tengo.Object {
+	values := make(map[string]tengo.Object)
+	for key, value := range item {
+		values[key] = &tengo.String{Value: value}
+	}
+
+	return &tengo.ImmutableMap{
+		Value: values,
+	}
+}
+
 // TArrayToGoStrSlice converts a tengo Array into a golang string slice
 func TArrayToGoStrSlice(obj tengo.Object, name string) ([]string, error) {
 	switch array := obj.(type) {
