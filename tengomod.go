@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/analog-substance/tengo/v2"
+	"github.com/analog-substance/tengomod/exec"
 	"github.com/analog-substance/tengomod/filepath"
 	"github.com/analog-substance/tengomod/nmap"
 	"github.com/analog-substance/tengomod/os2"
@@ -40,6 +41,9 @@ var (
 		},
 		"nmap": func(_ *ModuleOptions) map[string]tengo.Object {
 			return nmap.Module()
+		},
+		"exec": func(_ *ModuleOptions) map[string]tengo.Object {
+			return exec.Module()
 		},
 	}
 )
