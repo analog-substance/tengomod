@@ -8,6 +8,7 @@ import (
 
 	"github.com/analog-substance/tengo/v2"
 	"github.com/analog-substance/tengomod/interop"
+	"github.com/emirpasic/gods/sets/hashset"
 )
 
 func Module() map[string]tengo.Object {
@@ -28,7 +29,10 @@ func Module() map[string]tengo.Object {
 			Name:  "rand_item",
 			Value: interop.NewCallable(randItem, interop.WithExactArgs(1)),
 		},
-		// "unique":          &tengo.UserFunction{Name: "unique", Value: interop.NewCallable(unique, interop.WithExactArgs(2))},
+		"unique": &tengo.UserFunction{
+			Name:  "unique",
+			Value: interop.NewCallable(unique, interop.WithExactArgs(1)),
+		},
 	}
 }
 
@@ -60,28 +64,25 @@ func randItem(args ...tengo.Object) (tengo.Object, error) {
 	return slice[i].(tengo.Object), nil
 }
 
-// func unique(args ...tengo.Object) (tengo.Object, error) {
-// 	if len(args) != 1 {
-// 		return nil, tengo.ErrWrongNumArguments
-// 	}
+func unique(args ...tengo.Object) (tengo.Object, error) {
+	slice, err := interop.TArrayToGoStrSlice(args[0], "slice")
+	if err != nil {
+		return nil, err
+	}
 
-// 	array, ok := args[0].(*tengo.Array)
-// 	if !ok {
-// 		return nil, tengo.ErrInvalidArgumentType{
-// 			Name:     "slice",
-// 			Expected: "array",
-// 			Found:    args[0].TypeName(),
-// 		}
-// 	}
+	set := hashset.New()
+	for _, item := range slice {
+		set.Add(item)
+	}
 
-// 	slice, err := arrayToStringSlice(array)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	var items []string
+	for _, item := range set.Values() {
+		items = append(items, item.(string))
+	}
+	sort.Strings(items)
 
-// 	itemSet := set.NewStringSet(slice)
-// 	return sliceToStringArray(itemSet.SortedStringSlice()), nil
-// }
+	return interop.GoStrSliceToTArray(items), nil
+}
 
 func containsString(args ...tengo.Object) (tengo.Object, error) {
 	slice, err := interop.TArrayToGoStrSlice(args[0], "slice")
