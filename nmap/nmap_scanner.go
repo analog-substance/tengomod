@@ -12,13 +12,13 @@ import (
 	"github.com/analog-substance/tengo/v2"
 	"github.com/analog-substance/tengo/v2/stdlib"
 	"github.com/analog-substance/tengomod/interop"
+	"github.com/analog-substance/tengomod/types"
 )
 
 // NmapScanner is the tengo wrapper object for nmap.Scanner
 type NmapScanner struct {
-	tengo.ObjectImpl
-	Value     *nmap.Scanner
-	objectMap map[string]tengo.Object
+	types.PropObject
+	Value *nmap.Scanner
 }
 
 // addOptionA transform a function of 'func() nmap.Option' signature
@@ -150,19 +150,6 @@ func (s *NmapScanner) IsFalsy() bool {
 // CanIterate should return whether the Object can be Iterated.
 func (s *NmapScanner) CanIterate() bool {
 	return false
-}
-
-func (s *NmapScanner) IndexGet(index tengo.Object) (value tengo.Object, err error) {
-	strIdx, ok := tengo.ToString(index)
-	if !ok {
-		return nil, tengo.ErrInvalidIndexType
-	}
-
-	res, ok := s.objectMap[strIdx]
-	if !ok {
-		res = tengo.UndefinedValue
-	}
-	return res, nil
 }
 
 func makeNmapScanner() (*NmapScanner, error) {
@@ -416,15 +403,18 @@ func makeNmapScanner() (*NmapScanner, error) {
 		},
 	}
 
-	nmapScanner.objectMap = objectMap
+	nmapScanner.PropObject = types.PropObject{
+		ObjectMap:  objectMap,
+		Properties: make(map[string]types.Property),
+	}
+
 	return nmapScanner, nil
 }
 
 // NmapRun represents a simple tengo object wrapper for *nmap.Run
 type NmapRun struct {
-	tengo.ObjectImpl
-	Value     *nmap.Run
-	objectMap map[string]tengo.Object
+	types.PropObject
+	Value *nmap.Run
 }
 
 // TypeName should return the name of the type.
@@ -449,19 +439,6 @@ func (r *NmapRun) CanIterate() bool {
 	return false
 }
 
-func (r *NmapRun) IndexGet(index tengo.Object) (value tengo.Object, err error) {
-	strIdx, ok := tengo.ToString(index)
-	if !ok {
-		return nil, tengo.ErrInvalidIndexType
-	}
-
-	res, ok := r.objectMap[strIdx]
-	if !ok {
-		res = tengo.UndefinedValue
-	}
-	return res, nil
-}
-
 func makeNmapRun(run *nmap.Run) *NmapRun {
 	nmapRun := &NmapRun{
 		Value: run,
@@ -475,10 +452,12 @@ func makeNmapRun(run *nmap.Run) *NmapRun {
 	}
 
 	// Currently only need ports, probably will want to implement more
-	objectMap := map[string]tengo.Object{
-		"ports": interop.GoIntSliceToTArray(ports),
+	nmapRun.PropObject = types.PropObject{
+		ObjectMap: make(map[string]tengo.Object),
+		Properties: map[string]types.Property{
+			"ports": types.StaticProperty(interop.GoIntSliceToTArray(ports)),
+		},
 	}
 
-	nmapRun.objectMap = objectMap
 	return nmapRun
 }

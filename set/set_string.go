@@ -5,13 +5,13 @@ import (
 
 	"github.com/analog-substance/tengo/v2"
 	"github.com/analog-substance/tengomod/interop"
+	"github.com/analog-substance/tengomod/types"
 	"github.com/emirpasic/gods/sets/hashset"
 )
 
 type StringSet struct {
-	tengo.ObjectImpl
-	Value     *hashset.Set
-	objectMap map[string]tengo.Object
+	types.PropObject
+	Value *hashset.Set
 }
 
 func makeStringSet(set *hashset.Set) *StringSet {
@@ -34,7 +34,10 @@ func makeStringSet(set *hashset.Set) *StringSet {
 		},
 	}
 
-	stringSet.objectMap = objectMap
+	stringSet.PropObject = types.PropObject{
+		ObjectMap:  objectMap,
+		Properties: make(map[string]types.Property),
+	}
 
 	return stringSet
 }
@@ -97,17 +100,4 @@ func (s *StringSet) IsFalsy() bool {
 // CanIterate should return whether the Object can be Iterated.
 func (s *StringSet) CanIterate() bool {
 	return false
-}
-
-func (s *StringSet) IndexGet(index tengo.Object) (tengo.Object, error) {
-	strIdx, ok := tengo.ToString(index)
-	if !ok {
-		return nil, tengo.ErrInvalidIndexType
-	}
-
-	res, ok := s.objectMap[strIdx]
-	if !ok {
-		res = tengo.UndefinedValue
-	}
-	return res, nil
 }
