@@ -10,7 +10,6 @@ import (
 
 	"github.com/analog-substance/fileutil"
 	"github.com/analog-substance/tengo/v2"
-	"github.com/analog-substance/tengomod/internal/common"
 	"github.com/analog-substance/tengomod/interop"
 	"github.com/bmatcuk/doublestar/v4"
 )
@@ -303,7 +302,7 @@ func (m *module) tempChdir(args ...tengo.Object) (tengo.Object, error) {
 		}
 	}
 
-	runner := common.NewRunner(fn, compiled, context.Background())
+	runner := interop.NewCompiledFuncRunner(fn, compiled, context.Background())
 	_, err = runner.Run()
 	if err != nil {
 		return interop.GoErrToTErr(err), nil

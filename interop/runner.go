@@ -1,11 +1,10 @@
-package common
+package interop
 
 import (
 	"context"
 	"errors"
 
 	"github.com/analog-substance/tengo/v2"
-	"github.com/analog-substance/tengomod/interop"
 )
 
 type CompiledFuncRunner struct {
@@ -14,7 +13,7 @@ type CompiledFuncRunner struct {
 	fn       *tengo.CompiledFunction
 }
 
-func NewRunner(fn *tengo.CompiledFunction, compiled *tengo.Compiled, ctx context.Context) CompiledFuncRunner {
+func NewCompiledFuncRunner(fn *tengo.CompiledFunction, compiled *tengo.Compiled, ctx context.Context) CompiledFuncRunner {
 	return CompiledFuncRunner{
 		ctx:      ctx,
 		compiled: compiled,
@@ -29,7 +28,7 @@ func (r *CompiledFuncRunner) Run(args ...tengo.Object) (tengo.Object, error) {
 	go func() {
 		obj, err := vm.RunCompiled(r.fn, args...)
 		if err != nil {
-			ch <- interop.GoErrToTErr(err)
+			ch <- GoErrToTErr(err)
 			return
 		}
 

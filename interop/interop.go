@@ -222,6 +222,20 @@ func TIntToGoInt(arg tengo.Object, name string) (int, error) {
 	return i, nil
 }
 
+// TBoolToGoBool converts a tengo object into a golang bool
+func TBoolToGoBool(arg tengo.Object, name string) (bool, error) {
+	b, ok := tengo.ToBool(arg)
+	if !ok {
+		return false, tengo.ErrInvalidArgumentType{
+			Name:     name,
+			Expected: "bool(compatible)",
+			Found:    arg.TypeName(),
+		}
+	}
+
+	return b, nil
+}
+
 // GoErrToTErr converts a golang error into a tengo Error
 func GoErrToTErr(err error) tengo.Object {
 	return &tengo.Error{
