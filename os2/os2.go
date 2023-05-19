@@ -16,14 +16,12 @@ import (
 )
 
 type module struct {
-	Compiled *tengo.Compiled
-	Ctx      context.Context
+	getCompiled func() (*tengo.Compiled, context.Context)
 }
 
-func Module(compiled *tengo.Compiled, ctx context.Context) map[string]tengo.Object {
+func Module(getCompiled func() (*tengo.Compiled, context.Context)) map[string]tengo.Object {
 	m := &module{
-		Compiled: compiled,
-		Ctx:      ctx,
+		getCompiled: getCompiled,
 	}
 
 	return map[string]tengo.Object{
@@ -266,9 +264,11 @@ func (m *module) readStdin(args ...tengo.Object) (tengo.Object, error) {
 // tempChdir changes the current directory, executes the function, then changes the current directory back.
 // Represents 'os2.temp_chdir(dir string, fn func())'
 func (m *module) tempChdir(args ...tengo.Object) (tengo.Object, error) {
-	if m.Compiled == nil {
+	if m.getCompiled == nil {
 		return nil, errors.New("module not setup to run compiled functions from Go code")
 	}
+
+	compiled, _ := m.getCompiled()
 
 	path, ok := tengo.ToString(args[0])
 	if !ok {
@@ -303,7 +303,7 @@ func (m *module) tempChdir(args ...tengo.Object) (tengo.Object, error) {
 		}
 	}
 
-	runner := common.NewRunner(fn, m.Compiled, context.Background())
+	runner := common.NewRunner(fn, compiled, context.Background())
 	_, err = runner.Run()
 	if err != nil {
 		return interop.GoErrToTErr(err), nil

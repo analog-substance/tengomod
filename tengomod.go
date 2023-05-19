@@ -32,9 +32,9 @@ var (
 		},
 		"os2": func(o *ModuleOptions) map[string]tengo.Object {
 			if o.getCompiled != nil {
-				return os2.Module(o.getCompiled())
+				return os2.Module(o.getCompiled)
 			}
-			return os2.Module(nil, context.Background())
+			return os2.Module(nil)
 		},
 		"set": func(_ *ModuleOptions) map[string]tengo.Object {
 			return set.Module()
