@@ -252,6 +252,15 @@ func TBoolToGoBool(arg tengo.Object, name string) (bool, error) {
 	return b, nil
 }
 
+// GoBoolToTBool converts a golang bool to a tengo bool
+func GoBoolToTBool(val bool) tengo.Object {
+	if val {
+		return tengo.TrueValue
+	}
+
+	return tengo.FalseValue
+}
+
 // GoErrToTErr converts a golang error into a tengo Error
 func GoErrToTErr(err error) tengo.Object {
 	return &tengo.Error{
@@ -268,639 +277,330 @@ func GoStrToTStr(str string) tengo.Object {
 	}
 }
 
-type ArgValidation func([]tengo.Object) error
-
-func WithExactArgs(n int) ArgValidation {
-	return func(args []tengo.Object) error {
-		if len(args) != n {
-			return tengo.ErrWrongNumArguments
-		}
-		return nil
-	}
-}
-
-func WithMinArgs(min int) ArgValidation {
-	return func(args []tengo.Object) error {
-		if len(args) < min {
-			return tengo.ErrWrongNumArguments
-		}
-		return nil
-	}
-}
-
-func WithMaxArgs(max int) ArgValidation {
-	return func(args []tengo.Object) error {
-		if len(args) > max {
-			return tengo.ErrWrongNumArguments
-		}
-		return nil
-	}
-}
-
-func WithArgRange(min int, max int) ArgValidation {
-	return func(args []tengo.Object) error {
-		if len(args) < min || len(args) > max {
-			return tengo.ErrWrongNumArguments
-		}
-		return nil
-	}
-}
-
-func NewCallable(callable tengo.CallableFunc, validations ...ArgValidation) tengo.CallableFunc {
-	return func(args ...tengo.Object) (tengo.Object, error) {
-		for _, validation := range validations {
-			err := validation(args)
-			if err != nil {
-				return nil, err
-			}
-		}
-		return callable(args...)
+// GoIntToTInt converts a golang int to a tengo int
+func GoIntToTInt(i int) tengo.Object {
+	return &tengo.Int{
+		Value: int64(i),
 	}
 }
 
 // FuncASSSSRSp transform a function of 'func(string, string, string, string) *string' signature
 // into tengo CallableFunc type.
 func FuncASSSSRSp(fn func(string, string, string, string) *string) tengo.CallableFunc {
-	callable := func(args ...tengo.Object) (tengo.Object, error) {
-		s1, err := TStrToGoStr(args[0], "first")
-		if err != nil {
-			return nil, err
-		}
+	advFunc := AdvFunction{
+		NumArgs: ExactArgs(4),
+		Args: []AdvArg{
+			StrArg("first"),
+			StrArg("second"),
+			StrArg("third"),
+			StrArg("fourth"),
+		},
+		Value: func(args map[string]interface{}) (tengo.Object, error) {
+			s1 := args["first"].(string)
+			s2 := args["second"].(string)
+			s3 := args["third"].(string)
+			s4 := args["fourth"].(string)
 
-		s2, err := TStrToGoStr(args[1], "second")
-		if err != nil {
-			return nil, err
-		}
-
-		s3, err := TStrToGoStr(args[2], "third")
-		if err != nil {
-			return nil, err
-		}
-
-		s4, err := TStrToGoStr(args[3], "fourth")
-		if err != nil {
-			return nil, err
-		}
-
-		s := fn(s1, s2, s3, s4)
-		if len(*s) > tengo.MaxStringLen {
-			return nil, tengo.ErrStringLimit
-		}
-		return &tengo.String{Value: *s}, nil
+			s := fn(s1, s2, s3, s4)
+			if len(*s) > tengo.MaxStringLen {
+				return nil, tengo.ErrStringLimit
+			}
+			return &tengo.String{Value: *s}, nil
+		},
 	}
-	return NewCallable(callable, WithExactArgs(4))
+
+	return advFunc.Call
 }
 
 // FuncASSSRSp transform a function of 'func(string, string, string) *string' signature
 // into tengo CallableFunc type.
 func FuncASSSRSp(fn func(string, string, string) *string) tengo.CallableFunc {
-	return func(args ...tengo.Object) (tengo.Object, error) {
-		if len(args) != 3 {
-			return nil, tengo.ErrWrongNumArguments
-		}
-		s1, ok := tengo.ToString(args[0])
-		if !ok {
-			return nil, tengo.ErrInvalidArgumentType{
-				Name:     "first",
-				Expected: "string(compatible)",
-				Found:    args[0].TypeName(),
+	advFunc := AdvFunction{
+		NumArgs: ExactArgs(3),
+		Args: []AdvArg{
+			StrArg("first"),
+			StrArg("second"),
+			StrArg("third"),
+		},
+		Value: func(args map[string]interface{}) (tengo.Object, error) {
+			s1 := args["first"].(string)
+			s2 := args["second"].(string)
+			s3 := args["third"].(string)
+
+			s := fn(s1, s2, s3)
+			if len(*s) > tengo.MaxStringLen {
+				return nil, tengo.ErrStringLimit
 			}
-		}
-		s2, ok := tengo.ToString(args[1])
-		if !ok {
-			return nil, tengo.ErrInvalidArgumentType{
-				Name:     "second",
-				Expected: "string(compatible)",
-				Found:    args[1].TypeName(),
-			}
-		}
-		s3, ok := tengo.ToString(args[2])
-		if !ok {
-			return nil, tengo.ErrInvalidArgumentType{
-				Name:     "third",
-				Expected: "string(compatible)",
-				Found:    args[2].TypeName(),
-			}
-		}
-		s := fn(s1, s2, s3)
-		if len(*s) > tengo.MaxStringLen {
-			return nil, tengo.ErrStringLimit
-		}
-		return &tengo.String{Value: *s}, nil
+			return &tengo.String{Value: *s}, nil
+		},
 	}
+	return advFunc.Call
 }
 
 // FuncASSSsSRSsp transform a function of 'func(string, string, []string, string) *[]string' signature
 // into tengo CallableFunc type.
 func FuncASSSsSRSsp(fn func(string, string, []string, string) *[]string) tengo.CallableFunc {
-	return func(args ...tengo.Object) (tengo.Object, error) {
-		if len(args) != 4 {
-			return nil, tengo.ErrWrongNumArguments
-		}
-		s1, ok := tengo.ToString(args[0])
-		if !ok {
-			return nil, tengo.ErrInvalidArgumentType{
-				Name:     "first",
-				Expected: "string(compatible)",
-				Found:    args[0].TypeName(),
-			}
-		}
-		s2, ok := tengo.ToString(args[1])
-		if !ok {
-			return nil, tengo.ErrInvalidArgumentType{
-				Name:     "second",
-				Expected: "string(compatible)",
-				Found:    args[1].TypeName(),
-			}
-		}
+	advFunc := AdvFunction{
+		NumArgs: ExactArgs(4),
+		Args: []AdvArg{
+			StrArg("first"),
+			StrArg("second"),
+			StrSliceArg("third", false),
+			StrArg("fourth"),
+		},
+		Value: func(args map[string]interface{}) (tengo.Object, error) {
+			s1 := args["first"].(string)
+			s2 := args["second"].(string)
+			ss1 := args["third"].([]string)
+			s4 := args["fourth"].(string)
 
-		var ss1 []string
-		switch arg2 := args[2].(type) {
-		case *tengo.Array:
-			for idx, a := range arg2.Value {
-				as, ok := tengo.ToString(a)
-				if !ok {
-					return nil, tengo.ErrInvalidArgumentType{
-						Name:     fmt.Sprintf("third[%d]", idx),
-						Expected: "string(compatible)",
-						Found:    a.TypeName(),
-					}
-				}
-				ss1 = append(ss1, as)
-			}
-		case *tengo.ImmutableArray:
-			for idx, a := range arg2.Value {
-				as, ok := tengo.ToString(a)
-				if !ok {
-					return nil, tengo.ErrInvalidArgumentType{
-						Name:     fmt.Sprintf("third[%d]", idx),
-						Expected: "string(compatible)",
-						Found:    a.TypeName(),
-					}
-				}
-				ss1 = append(ss1, as)
-			}
-		default:
-			return nil, tengo.ErrInvalidArgumentType{
-				Name:     "third",
-				Expected: "array",
-				Found:    args[0].TypeName(),
-			}
-		}
-
-		s4, ok := tengo.ToString(args[3])
-		if !ok {
-			return nil, tengo.ErrInvalidArgumentType{
-				Name:     "fourth",
-				Expected: "string(compatible)",
-				Found:    args[3].TypeName(),
-			}
-		}
-
-		arr := &tengo.Array{}
-		for _, res := range *fn(s1, s2, ss1, s4) {
-			if len(res) > tengo.MaxStringLen {
-				return nil, tengo.ErrStringLimit
-			}
-			arr.Value = append(arr.Value, &tengo.String{Value: res})
-		}
-		return arr, nil
+			return GoStrSliceToTArray(*fn(s1, s2, ss1, s4)), nil
+		},
 	}
+	return advFunc.Call
 }
 
 // FuncASSsSRSsp transform a function of 'func(string, []string, string) *[]string' signature
 // into tengo CallableFunc type.
 func FuncASSsSRSsp(fn func(string, []string, string) *[]string) tengo.CallableFunc {
-	return func(args ...tengo.Object) (tengo.Object, error) {
-		if len(args) != 3 {
-			return nil, tengo.ErrWrongNumArguments
-		}
-		s1, ok := tengo.ToString(args[0])
-		if !ok {
-			return nil, tengo.ErrInvalidArgumentType{
-				Name:     "first",
-				Expected: "string(compatible)",
-				Found:    args[0].TypeName(),
-			}
-		}
+	advFunc := AdvFunction{
+		NumArgs: ExactArgs(3),
+		Args: []AdvArg{
+			StrArg("first"),
+			StrSliceArg("second", false),
+			StrArg("third"),
+		},
+		Value: func(args map[string]interface{}) (tengo.Object, error) {
+			s1 := args["first"].(string)
+			ss1 := args["second"].([]string)
+			s3 := args["third"].(string)
 
-		var ss1 []string
-		switch arg1 := args[1].(type) {
-		case *tengo.Array:
-			for idx, a := range arg1.Value {
-				as, ok := tengo.ToString(a)
-				if !ok {
-					return nil, tengo.ErrInvalidArgumentType{
-						Name:     fmt.Sprintf("second[%d]", idx),
-						Expected: "string(compatible)",
-						Found:    a.TypeName(),
-					}
-				}
-				ss1 = append(ss1, as)
-			}
-		case *tengo.ImmutableArray:
-			for idx, a := range arg1.Value {
-				as, ok := tengo.ToString(a)
-				if !ok {
-					return nil, tengo.ErrInvalidArgumentType{
-						Name:     fmt.Sprintf("second[%d]", idx),
-						Expected: "string(compatible)",
-						Found:    a.TypeName(),
-					}
-				}
-				ss1 = append(ss1, as)
-			}
-		default:
-			return nil, tengo.ErrInvalidArgumentType{
-				Name:     "second",
-				Expected: "array",
-				Found:    args[1].TypeName(),
-			}
-		}
-
-		s3, ok := tengo.ToString(args[2])
-		if !ok {
-			return nil, tengo.ErrInvalidArgumentType{
-				Name:     "third",
-				Expected: "string(compatible)",
-				Found:    args[2].TypeName(),
-			}
-		}
-
-		arr := &tengo.Array{}
-		for _, res := range *fn(s1, ss1, s3) {
-			if len(res) > tengo.MaxStringLen {
-				return nil, tengo.ErrStringLimit
-			}
-			arr.Value = append(arr.Value, &tengo.String{Value: res})
-		}
-		return arr, nil
+			return GoStrSliceToTArray(*fn(s1, ss1, s3)), nil
+		},
 	}
+	return advFunc.Call
 }
 
 // FuncASSBSRBp transform a function of 'func(string, string, bool, string) *bool' signature
 // into tengo CallableFunc type.
 func FuncASSBSRBp(fn func(string, string, bool, string) *bool) tengo.CallableFunc {
-	return func(args ...tengo.Object) (tengo.Object, error) {
-		if len(args) != 4 {
-			return nil, tengo.ErrWrongNumArguments
-		}
-		s1, ok := tengo.ToString(args[0])
-		if !ok {
-			return nil, tengo.ErrInvalidArgumentType{
-				Name:     "first",
-				Expected: "string(compatible)",
-				Found:    args[0].TypeName(),
-			}
-		}
-		s2, ok := tengo.ToString(args[1])
-		if !ok {
-			return nil, tengo.ErrInvalidArgumentType{
-				Name:     "second",
-				Expected: "string(compatible)",
-				Found:    args[1].TypeName(),
-			}
-		}
+	advFunc := AdvFunction{
+		NumArgs: ExactArgs(4),
+		Args: []AdvArg{
+			StrArg("first"),
+			StrArg("second"),
+			BoolArg("third"),
+			StrArg("fourth"),
+		},
+		Value: func(args map[string]interface{}) (tengo.Object, error) {
+			s1 := args["first"].(string)
+			s2 := args["second"].(string)
+			b1 := args["third"].(bool)
+			s4 := args["fourth"].(string)
 
-		b1, ok := tengo.ToBool(args[2])
-		if !ok {
-			return nil, tengo.ErrInvalidArgumentType{
-				Name:     "third",
-				Expected: "bool(compatible)",
-				Found:    args[2].TypeName(),
-			}
-		}
-
-		s4, ok := tengo.ToString(args[3])
-		if !ok {
-			return nil, tengo.ErrInvalidArgumentType{
-				Name:     "fourth",
-				Expected: "string(compatible)",
-				Found:    args[3].TypeName(),
-			}
-		}
-
-		if *fn(s1, s2, b1, s4) {
-			return tengo.TrueValue, nil
-		}
-		return tengo.FalseValue, nil
+			return GoBoolToTBool(*fn(s1, s2, b1, s4)), nil
+		},
 	}
+	return advFunc.Call
 }
 
 // FuncASBSRBp transform a function of 'func(string, bool, string) *bool' signature
 // into tengo CallableFunc type.
 func FuncASBSRBp(fn func(string, bool, string) *bool) tengo.CallableFunc {
-	return func(args ...tengo.Object) (tengo.Object, error) {
-		if len(args) != 3 {
-			return nil, tengo.ErrWrongNumArguments
-		}
-		s1, ok := tengo.ToString(args[0])
-		if !ok {
-			return nil, tengo.ErrInvalidArgumentType{
-				Name:     "first",
-				Expected: "string(compatible)",
-				Found:    args[0].TypeName(),
-			}
-		}
+	advFunc := AdvFunction{
+		NumArgs: ExactArgs(3),
+		Args: []AdvArg{
+			StrArg("first"),
+			BoolArg("second"),
+			StrArg("third"),
+		},
+		Value: func(args map[string]interface{}) (tengo.Object, error) {
+			s1 := args["first"].(string)
+			b1 := args["second"].(bool)
+			s3 := args["third"].(string)
 
-		b1, ok := tengo.ToBool(args[1])
-		if !ok {
-			return nil, tengo.ErrInvalidArgumentType{
-				Name:     "second",
-				Expected: "bool(compatible)",
-				Found:    args[1].TypeName(),
-			}
-		}
-
-		s4, ok := tengo.ToString(args[2])
-		if !ok {
-			return nil, tengo.ErrInvalidArgumentType{
-				Name:     "third",
-				Expected: "string(compatible)",
-				Found:    args[2].TypeName(),
-			}
-		}
-
-		if *fn(s1, b1, s4) {
-			return tengo.TrueValue, nil
-		}
-		return tengo.FalseValue, nil
+			return GoBoolToTBool(*fn(s1, b1, s3)), nil
+		},
 	}
+	return advFunc.Call
 }
 
 // FuncASSISRIp transform a function of 'func(string, string, int, string) *int' signature
 // into tengo CallableFunc type.
 func FuncASSISRIp(fn func(string, string, int, string) *int) tengo.CallableFunc {
-	return func(args ...tengo.Object) (tengo.Object, error) {
-		if len(args) != 4 {
-			return nil, tengo.ErrWrongNumArguments
-		}
-		s1, ok := tengo.ToString(args[0])
-		if !ok {
-			return nil, tengo.ErrInvalidArgumentType{
-				Name:     "first",
-				Expected: "string(compatible)",
-				Found:    args[0].TypeName(),
-			}
-		}
-		s2, ok := tengo.ToString(args[1])
-		if !ok {
-			return nil, tengo.ErrInvalidArgumentType{
-				Name:     "second",
-				Expected: "string(compatible)",
-				Found:    args[1].TypeName(),
-			}
-		}
+	advFunc := AdvFunction{
+		NumArgs: ExactArgs(4),
+		Args: []AdvArg{
+			StrArg("first"),
+			StrArg("second"),
+			IntArg("third"),
+			StrArg("fourth"),
+		},
+		Value: func(args map[string]interface{}) (tengo.Object, error) {
+			s1 := args["first"].(string)
+			s2 := args["second"].(string)
+			i1 := args["third"].(int)
+			s4 := args["fourth"].(string)
 
-		i1, ok := tengo.ToInt(args[2])
-		if !ok {
-			return nil, tengo.ErrInvalidArgumentType{
-				Name:     "third",
-				Expected: "int(compatible)",
-				Found:    args[2].TypeName(),
-			}
-		}
-
-		s4, ok := tengo.ToString(args[3])
-		if !ok {
-			return nil, tengo.ErrInvalidArgumentType{
-				Name:     "fourth",
-				Expected: "string(compatible)",
-				Found:    args[3].TypeName(),
-			}
-		}
-
-		i := fn(s1, s2, i1, s4)
-		return &tengo.Int{Value: int64(*i)}, nil
+			i := fn(s1, s2, i1, s4)
+			return &tengo.Int{Value: int64(*i)}, nil
+		},
 	}
+	return advFunc.Call
 }
 
 // FuncASISRIp transform a function of 'func(string, int, string) *int' signature
 // into tengo CallableFunc type.
 func FuncASISRIp(fn func(string, int, string) *int) tengo.CallableFunc {
-	return func(args ...tengo.Object) (tengo.Object, error) {
-		if len(args) != 3 {
-			return nil, tengo.ErrWrongNumArguments
-		}
-		s1, ok := tengo.ToString(args[0])
-		if !ok {
-			return nil, tengo.ErrInvalidArgumentType{
-				Name:     "first",
-				Expected: "string(compatible)",
-				Found:    args[0].TypeName(),
-			}
-		}
+	advFunc := AdvFunction{
+		NumArgs: ExactArgs(4),
+		Args: []AdvArg{
+			StrArg("first"),
+			IntArg("second"),
+			StrArg("third"),
+		},
+		Value: func(args map[string]interface{}) (tengo.Object, error) {
+			s1 := args["first"].(string)
+			i1 := args["second"].(int)
+			s3 := args["third"].(string)
 
-		i1, ok := tengo.ToInt(args[1])
-		if !ok {
-			return nil, tengo.ErrInvalidArgumentType{
-				Name:     "second",
-				Expected: "int(compatible)",
-				Found:    args[1].TypeName(),
-			}
-		}
-
-		s4, ok := tengo.ToString(args[2])
-		if !ok {
-			return nil, tengo.ErrInvalidArgumentType{
-				Name:     "third",
-				Expected: "string(compatible)",
-				Found:    args[2].TypeName(),
-			}
-		}
-
-		i := fn(s1, i1, s4)
-		return &tengo.Int{Value: int64(*i)}, nil
+			i := fn(s1, i1, s3)
+			return &tengo.Int{Value: int64(*i)}, nil
+		},
 	}
+	return advFunc.Call
 }
 
 // FuncASRSsE transform a function of 'func(string) ([]string, error)' signature
 // into tengo CallableFunc type.
 func FuncASRSsE(fn func(string) ([]string, error)) tengo.CallableFunc {
-	return func(args ...tengo.Object) (tengo.Object, error) {
-		if len(args) != 1 {
-			return nil, tengo.ErrWrongNumArguments
-		}
-		s1, ok := tengo.ToString(args[0])
-		if !ok {
-			return nil, tengo.ErrInvalidArgumentType{
-				Name:     "first",
-				Expected: "string(compatible)",
-				Found:    args[0].TypeName(),
-			}
-		}
+	advFunc := AdvFunction{
+		NumArgs: ExactArgs(1),
+		Args: []AdvArg{
+			StrArg("first"),
+		},
+		Value: func(args map[string]interface{}) (tengo.Object, error) {
+			s1 := args["first"].(string)
 
-		res, err := fn(s1)
-		if err != nil {
-			return GoErrToTErr(err), nil
-		}
-
-		arr := &tengo.Array{}
-		for _, r := range res {
-			if len(r) > tengo.MaxStringLen {
-				return nil, tengo.ErrStringLimit
+			res, err := fn(s1)
+			if err != nil {
+				return GoErrToTErr(err), nil
 			}
-			arr.Value = append(arr.Value, &tengo.String{Value: r})
-		}
-		return arr, nil
+
+			return GoStrSliceToTArray(res), nil
+		},
 	}
+	return advFunc.Call
 }
 
 // FuncASRBE transform a function of 'func(string) (bool, error)' signature
 // into tengo CallableFunc type.
 func FuncASRBE(fn func(string) (bool, error)) tengo.CallableFunc {
-	return func(args ...tengo.Object) (tengo.Object, error) {
-		if len(args) != 1 {
-			return nil, tengo.ErrWrongNumArguments
-		}
-		s1, ok := tengo.ToString(args[0])
-		if !ok {
-			return nil, tengo.ErrInvalidArgumentType{
-				Name:     "first",
-				Expected: "string(compatible)",
-				Found:    args[0].TypeName(),
+	advFunc := AdvFunction{
+		NumArgs: ExactArgs(1),
+		Args: []AdvArg{
+			StrArg("first"),
+		},
+		Value: func(args map[string]interface{}) (tengo.Object, error) {
+			s1 := args["first"].(string)
+
+			res, err := fn(s1)
+			if err != nil {
+				return GoErrToTErr(err), nil
 			}
-		}
 
-		res, err := fn(s1)
-		if err != nil {
-			return GoErrToTErr(err), nil
-		}
-
-		if res {
-			return tengo.TrueValue, nil
-		}
-		return tengo.FalseValue, nil
+			return GoBoolToTBool(res), nil
+		},
 	}
+	return advFunc.Call
 }
 
 // FuncASRB transform a function of 'func(string) bool' signature
 // into tengo CallableFunc type.
 func FuncASRB(fn func(string) bool) tengo.CallableFunc {
-	return func(args ...tengo.Object) (tengo.Object, error) {
-		if len(args) != 1 {
-			return nil, tengo.ErrWrongNumArguments
-		}
-		s1, ok := tengo.ToString(args[0])
-		if !ok {
-			return nil, tengo.ErrInvalidArgumentType{
-				Name:     "first",
-				Expected: "string(compatible)",
-				Found:    args[0].TypeName(),
-			}
-		}
-
-		res := fn(s1)
-		if res {
-			return tengo.TrueValue, nil
-		}
-		return tengo.FalseValue, nil
+	advFunc := AdvFunction{
+		NumArgs: ExactArgs(1),
+		Args: []AdvArg{
+			StrArg("first"),
+		},
+		Value: func(args map[string]interface{}) (tengo.Object, error) {
+			s1 := args["first"].(string)
+			return GoBoolToTBool(fn(s1)), nil
+		},
 	}
+	return advFunc.Call
 }
 
 // FuncASvRSsE transform a function of 'func(...string) ([]string, error)' signature
 // into tengo CallableFunc type.
 func FuncASvRSsE(fn func(...string) ([]string, error)) tengo.CallableFunc {
-	return func(args ...tengo.Object) (tengo.Object, error) {
-		if len(args) == 0 {
-			return nil, tengo.ErrWrongNumArguments
-		}
-		var strings []string
-		for i, arg := range args {
-			str, ok := tengo.ToString(arg)
-			if !ok {
-				return nil, tengo.ErrInvalidArgumentType{
-					Name:     fmt.Sprintf("#%d arg", i),
-					Expected: "string(compatible)",
-					Found:    arg.TypeName(),
-				}
+	advFunc := AdvFunction{
+		NumArgs: MinArgs(1),
+		Args: []AdvArg{
+			StrSliceArg("first", true),
+		},
+		Value: func(args map[string]interface{}) (tengo.Object, error) {
+			strings := args["first"].([]string)
+
+			res, err := fn(strings...)
+			if err != nil {
+				return GoErrToTErr(err), nil
 			}
 
-			strings = append(strings, str)
-		}
-
-		res, err := fn(strings...)
-		if err != nil {
-			return GoErrToTErr(err), nil
-		}
-
-		return GoStrSliceToTArray(res), nil
+			return GoStrSliceToTArray(res), nil
+		},
 	}
+	return advFunc.Call
 }
 
 // FuncASvRB transform a function of 'func(...string) bool' signature
 // into tengo CallableFunc type.
 func FuncASvRB(fn func(...string) bool) tengo.CallableFunc {
-	return func(args ...tengo.Object) (tengo.Object, error) {
-		if len(args) == 0 {
-			return nil, tengo.ErrWrongNumArguments
-		}
-		var strings []string
-		for i, arg := range args {
-			str, ok := tengo.ToString(arg)
-			if !ok {
-				return nil, tengo.ErrInvalidArgumentType{
-					Name:     fmt.Sprintf("#%d arg", i),
-					Expected: "string(compatible)",
-					Found:    arg.TypeName(),
-				}
-			}
+	advFunc := AdvFunction{
+		NumArgs: MinArgs(1),
+		Args: []AdvArg{
+			StrSliceArg("first", true),
+		},
+		Value: func(args map[string]interface{}) (tengo.Object, error) {
+			strings := args["first"].([]string)
 
-			strings = append(strings, str)
-		}
-
-		res := fn(strings...)
-		if res {
-			return tengo.TrueValue, nil
-		}
-
-		return tengo.FalseValue, nil
+			return GoBoolToTBool(fn(strings...)), nil
+		},
 	}
+	return advFunc.Call
 }
 
 // FuncASvRS transform a function of 'func(...string) string' signature
 // into tengo CallableFunc type.
 func FuncASvRS(fn func(...string) string) tengo.CallableFunc {
-	return func(args ...tengo.Object) (tengo.Object, error) {
-		if len(args) == 0 {
-			return nil, tengo.ErrWrongNumArguments
-		}
-		var strings []string
-		for i, arg := range args {
-			str, ok := tengo.ToString(arg)
-			if !ok {
-				return nil, tengo.ErrInvalidArgumentType{
-					Name:     fmt.Sprintf("#%d arg", i),
-					Expected: "string(compatible)",
-					Found:    arg.TypeName(),
-				}
-			}
+	advFunc := AdvFunction{
+		NumArgs: MinArgs(1),
+		Args: []AdvArg{
+			StrSliceArg("first", true),
+		},
+		Value: func(args map[string]interface{}) (tengo.Object, error) {
+			strings := args["first"].([]string)
 
-			strings = append(strings, str)
-		}
-
-		return &tengo.String{Value: fn(strings...)}, nil
+			return GoStrToTStr(fn(strings...)), nil
+		},
 	}
+	return advFunc.Call
 }
 
 // FuncASRI transform a function of 'func(string) int' signature into
 // CallableFunc type.
 func FuncASRI(fn func(string) int) tengo.CallableFunc {
-	return func(args ...tengo.Object) (tengo.Object, error) {
-		if len(args) != 1 {
-			return nil, tengo.ErrWrongNumArguments
-		}
-		s1, ok := tengo.ToString(args[0])
-		if !ok {
-			return nil, tengo.ErrInvalidArgumentType{
-				Name:     "first",
-				Expected: "string(compatible)",
-				Found:    args[0].TypeName(),
-			}
-		}
-		i := fn(s1)
-		return &tengo.Int{Value: int64(i)}, nil
+	advFunc := AdvFunction{
+		NumArgs: ExactArgs(1),
+		Args: []AdvArg{
+			StrArg("first"),
+		},
+		Value: func(args map[string]interface{}) (tengo.Object, error) {
+			s1 := args["first"].(string)
+			return GoIntToTInt(fn(s1)), nil
+		},
 	}
+	return advFunc.Call
 }
 
 // AliasFunc is used to call the same tengo function using a different name

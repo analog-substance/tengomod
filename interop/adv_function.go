@@ -18,6 +18,10 @@ var (
 		return TIntToGoInt(obj, name)
 	}
 
+	BoolType TypeValidator = func(obj tengo.Object, name string) (interface{}, error) {
+		return TBoolToGoBool(obj, name)
+	}
+
 	StrSliceType TypeValidator = func(obj tengo.Object, name string) (interface{}, error) {
 		return TArrayToGoStrSlice(obj, name)
 	}
@@ -119,6 +123,13 @@ func IntArg(name string) AdvArg {
 	return AdvArg{
 		Name: name,
 		Type: IntType,
+	}
+}
+
+func BoolArg(name string) AdvArg {
+	return AdvArg{
+		Name: name,
+		Type: BoolType,
 	}
 }
 
