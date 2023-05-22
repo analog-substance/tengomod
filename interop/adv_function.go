@@ -26,6 +26,10 @@ var (
 		return TArrayToGoStrSlice(obj, name)
 	}
 
+	IntSliceType TypeValidator = func(obj tengo.Object, name string) (interface{}, error) {
+		return TArrayToGoIntSlice(obj, name)
+	}
+
 	SliceType TypeValidator = func(obj tengo.Object, name string) (interface{}, error) {
 		return TArrayToGoInterfaceSlice(obj, name)
 	}
@@ -137,6 +141,14 @@ func StrSliceArg(name string, varArgs bool) AdvArg {
 	return AdvArg{
 		Name:    name,
 		Type:    StrSliceType,
+		VarArgs: varArgs,
+	}
+}
+
+func IntSliceArg(name string, varArgs bool) AdvArg {
+	return AdvArg{
+		Name:    name,
+		Type:    IntSliceType,
 		VarArgs: varArgs,
 	}
 }
