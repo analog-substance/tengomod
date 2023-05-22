@@ -34,6 +34,10 @@ var (
 		return TArrayToGoInterfaceSlice(obj, name)
 	}
 
+	StrMapStrType TypeValidator = func(obj tengo.Object, name string) (interface{}, error) {
+		return TMapToGoStrMapStr(obj, name)
+	}
+
 	RegexType TypeValidator = func(obj tengo.Object, name string) (interface{}, error) {
 		value, err := TStrToGoStr(obj, name)
 		if err != nil {
@@ -72,6 +76,10 @@ var (
 			}
 		}
 		return fn, nil
+	}
+
+	ObjectType TypeValidator = func(obj tengo.Object, name string) (interface{}, error) {
+		return obj, nil
 	}
 )
 
@@ -161,6 +169,13 @@ func SliceArg(name string, varArgs bool) AdvArg {
 	}
 }
 
+func StrMapStrArg(name string) AdvArg {
+	return AdvArg{
+		Name: name,
+		Type: StrMapStrType,
+	}
+}
+
 func RegexArg(name string) AdvArg {
 	return AdvArg{
 		Name: name,
@@ -182,10 +197,24 @@ func CompileFuncArg(name string) AdvArg {
 	}
 }
 
+func ObjectArg(name string) AdvArg {
+	return AdvArg{
+		Name: name,
+		Type: ObjectType,
+	}
+}
+
 func UnionArg(name string, types ...TypeValidator) AdvArg {
 	return AdvArg{
 		Name: name,
 		Type: UnionType(types...),
+	}
+}
+
+func CustomArg(name string, t interface{}) AdvArg {
+	return AdvArg{
+		Name: name,
+		Type: CustomType(t),
 	}
 }
 
@@ -319,6 +348,24 @@ func (m ArgMap) GetSlice(name string) ([]interface{}, bool) {
 	}
 
 	return val.([]interface{}), ok
+}
+
+func (m ArgMap) GetStrMapStr(name string) (map[string]string, bool) {
+	val, ok := m[name]
+	if !ok {
+		return make(map[string]string), ok
+	}
+
+	return val.(map[string]string), ok
+}
+
+func (m ArgMap) GetObject(name string) (tengo.Object, bool) {
+	val, ok := m[name]
+	if !ok {
+		return nil, ok
+	}
+
+	return val.(tengo.Object), ok
 }
 
 func (m ArgMap) Get(name string) (interface{}, bool) {
