@@ -79,6 +79,24 @@ func WithModules(modules ...string) ModuleOption {
 	}
 }
 
+func WithoutModules(modules ...string) ModuleOption {
+	return func(o *ModuleOptions) {
+		for _, m := range AllModuleNames() {
+			add := true
+			for _, module := range modules {
+				if m == module {
+					add = false
+					break
+				}
+			}
+
+			if add {
+				o.modules = append(o.modules, m)
+			}
+		}
+	}
+}
+
 func AllModuleNames() []string {
 	var names []string
 	for name := range builtinModules {
