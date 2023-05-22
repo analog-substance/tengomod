@@ -275,7 +275,8 @@ func (m ArgMap) GetString(name string) (string, bool) {
 		return "", ok
 	}
 
-	return val.(string), ok
+	conv, ok := val.(string)
+	return conv, ok
 }
 
 func (m ArgMap) GetStringSlice(name string) ([]string, bool) {
@@ -284,7 +285,8 @@ func (m ArgMap) GetStringSlice(name string) ([]string, bool) {
 		return []string{}, ok
 	}
 
-	return val.([]string), ok
+	conv, ok := val.([]string)
+	return conv, ok
 }
 
 func (m ArgMap) GetBool(name string) (bool, bool) {
@@ -293,7 +295,8 @@ func (m ArgMap) GetBool(name string) (bool, bool) {
 		return false, ok
 	}
 
-	return val.(bool), ok
+	conv, ok := val.(bool)
+	return conv, ok
 }
 
 func (m ArgMap) GetInt(name string) (int, bool) {
@@ -302,7 +305,8 @@ func (m ArgMap) GetInt(name string) (int, bool) {
 		return 0, ok
 	}
 
-	return val.(int), ok
+	conv, ok := val.(int)
+	return conv, ok
 }
 
 func (m ArgMap) GetIntSlice(name string) ([]int, bool) {
@@ -311,7 +315,8 @@ func (m ArgMap) GetIntSlice(name string) ([]int, bool) {
 		return []int{}, ok
 	}
 
-	return val.([]int), ok
+	conv, ok := val.([]int)
+	return conv, ok
 }
 
 func (m ArgMap) GetRegex(name string) (*regexp.Regexp, bool) {
@@ -320,7 +325,8 @@ func (m ArgMap) GetRegex(name string) (*regexp.Regexp, bool) {
 		return nil, ok
 	}
 
-	return val.(*regexp.Regexp), ok
+	conv, ok := val.(*regexp.Regexp)
+	return conv, ok
 }
 
 func (m ArgMap) GetURL(name string) (*url.URL, bool) {
@@ -329,7 +335,8 @@ func (m ArgMap) GetURL(name string) (*url.URL, bool) {
 		return nil, ok
 	}
 
-	return val.(*url.URL), ok
+	conv, ok := val.(*url.URL)
+	return conv, ok
 }
 
 func (m ArgMap) GetCompiledFunc(name string) (*tengo.CompiledFunction, bool) {
@@ -338,7 +345,8 @@ func (m ArgMap) GetCompiledFunc(name string) (*tengo.CompiledFunction, bool) {
 		return nil, ok
 	}
 
-	return val.(*tengo.CompiledFunction), ok
+	conv, ok := val.(*tengo.CompiledFunction)
+	return conv, ok
 }
 
 func (m ArgMap) GetSlice(name string) ([]interface{}, bool) {
@@ -347,7 +355,8 @@ func (m ArgMap) GetSlice(name string) ([]interface{}, bool) {
 		return []interface{}{}, ok
 	}
 
-	return val.([]interface{}), ok
+	conv, ok := val.([]interface{})
+	return conv, ok
 }
 
 func (m ArgMap) GetStrMapStr(name string) (map[string]string, bool) {
@@ -356,7 +365,8 @@ func (m ArgMap) GetStrMapStr(name string) (map[string]string, bool) {
 		return make(map[string]string), ok
 	}
 
-	return val.(map[string]string), ok
+	conv, ok := val.(map[string]string)
+	return conv, ok
 }
 
 func (m ArgMap) GetObject(name string) (tengo.Object, bool) {
@@ -365,7 +375,8 @@ func (m ArgMap) GetObject(name string) (tengo.Object, bool) {
 		return nil, ok
 	}
 
-	return val.(tengo.Object), ok
+	conv, ok := val.(tengo.Object)
+	return conv, ok
 }
 
 func (m ArgMap) Get(name string) (interface{}, bool) {
