@@ -46,8 +46,8 @@ func (c *ExecCmd) run(args ...tengo.Object) (tengo.Object, error) {
 	return nil, nil
 }
 
-func (c *ExecCmd) setStdin(args map[string]interface{}) (tengo.Object, error) {
-	file := args["file"].(string)
+func (c *ExecCmd) setStdin(args interop.ArgMap) (tengo.Object, error) {
+	file, _ := args.GetString("file")
 
 	f, err := os.Open(file)
 	if err != nil {

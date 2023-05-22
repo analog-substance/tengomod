@@ -38,8 +38,8 @@ func (s *NmapScanner) addOptionAS(fn func(string) nmap.Option) tengo.CallableFun
 	advFunc := interop.AdvFunction{
 		NumArgs: interop.ExactArgs(1),
 		Args:    []interop.AdvArg{interop.StrArg("first")},
-		Value: func(args map[string]interface{}) (tengo.Object, error) {
-			first := args["first"].(string)
+		Value: func(args interop.ArgMap) (tengo.Object, error) {
+			first, _ := args.GetString("first")
 			option := fn(first)
 
 			s.Value.AddOptions(option)
@@ -56,8 +56,8 @@ func (s *NmapScanner) addOptionAI(fn func(int) nmap.Option) tengo.CallableFunc {
 	advFunc := interop.AdvFunction{
 		NumArgs: interop.ExactArgs(1),
 		Args:    []interop.AdvArg{interop.IntArg("first")},
-		Value: func(args map[string]interface{}) (tengo.Object, error) {
-			first := args["first"].(int)
+		Value: func(args interop.ArgMap) (tengo.Object, error) {
+			first, _ := args.GetInt("first")
 			option := fn(first)
 
 			s.Value.AddOptions(option)
@@ -73,8 +73,8 @@ func (s *NmapScanner) addOptionAI16(fn func(int16) nmap.Option) tengo.CallableFu
 	advFunc := interop.AdvFunction{
 		NumArgs: interop.ExactArgs(1),
 		Args:    []interop.AdvArg{interop.IntArg("first")},
-		Value: func(args map[string]interface{}) (tengo.Object, error) {
-			first := args["first"].(int)
+		Value: func(args interop.ArgMap) (tengo.Object, error) {
+			first, _ := args.GetInt("first")
 			option := fn(int16(first))
 
 			s.Value.AddOptions(option)
@@ -90,8 +90,8 @@ func (s *NmapScanner) addOptionAD(fn func(time.Duration) nmap.Option) tengo.Call
 	advFunc := interop.AdvFunction{
 		NumArgs: interop.ExactArgs(1),
 		Args:    []interop.AdvArg{interop.StrArg("first")},
-		Value: func(args map[string]interface{}) (tengo.Object, error) {
-			first := args["first"].(string)
+		Value: func(args interop.ArgMap) (tengo.Object, error) {
+			first, _ := args.GetString("first")
 
 			dur, err := time.ParseDuration(first)
 			if err != nil {
@@ -113,8 +113,8 @@ func (s *NmapScanner) addOptionASv(fn func(...string) nmap.Option) tengo.Callabl
 	advFunc := interop.AdvFunction{
 		NumArgs: interop.ExactArgs(1),
 		Args:    []interop.AdvArg{interop.StrSliceArg("first", true)},
-		Value: func(args map[string]interface{}) (tengo.Object, error) {
-			strings := args["first"].([]string)
+		Value: func(args interop.ArgMap) (tengo.Object, error) {
+			strings, _ := args.GetStringSlice("first")
 			option := fn(strings...)
 
 			s.Value.AddOptions(option)
@@ -129,15 +129,15 @@ func (s *NmapScanner) aliasFunc(name string, src string) *tengo.UserFunction {
 	return interop.AliasFunc(s, name, src)
 }
 
-func (s *NmapScanner) xmlOutput(args map[string]interface{}) (tengo.Object, error) {
-	s1 := args["path"].(string)
+func (s *NmapScanner) xmlOutput(args interop.ArgMap) (tengo.Object, error) {
+	s1, _ := args.GetString("path")
 	s.Value.ToFile(s1)
 
 	return s, nil
 }
 
-func (s *NmapScanner) allOutput(args map[string]interface{}) (tengo.Object, error) {
-	s1 := args["path"].(string)
+func (s *NmapScanner) allOutput(args interop.ArgMap) (tengo.Object, error) {
+	s1, _ := args.GetString("path")
 
 	s.Value.AddOptions(
 		nmap.WithGrepOutput(fmt.Sprintf("%s.gnmap", s1)),
@@ -148,8 +148,8 @@ func (s *NmapScanner) allOutput(args map[string]interface{}) (tengo.Object, erro
 	return s, nil
 }
 
-func (s *NmapScanner) timingTemplate(args map[string]interface{}) (tengo.Object, error) {
-	timing := args["timing"].(int)
+func (s *NmapScanner) timingTemplate(args interop.ArgMap) (tengo.Object, error) {
+	timing, _ := args.GetInt("timing")
 
 	option := nmap.WithTimingTemplate(nmap.Timing(timing))
 	s.Value.AddOptions(option)

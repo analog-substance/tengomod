@@ -46,15 +46,15 @@ func Module() map[string]tengo.Object {
 	}
 }
 
-func sortStrings(args map[string]interface{}) (tengo.Object, error) {
-	slice := args["slice"].([]string)
+func sortStrings(args interop.ArgMap) (tengo.Object, error) {
+	slice, _ := args.GetStringSlice("slice")
 	sort.Strings(slice)
 
 	return interop.GoStrSliceToTArray(slice), nil
 }
 
-func randItem(args map[string]interface{}) (tengo.Object, error) {
-	slice := args["slice"].([]interface{})
+func randItem(args interop.ArgMap) (tengo.Object, error) {
+	slice, _ := args.GetSlice("slice")
 
 	if len(slice) == 0 {
 		return nil, nil
@@ -67,8 +67,8 @@ func randItem(args map[string]interface{}) (tengo.Object, error) {
 	return slice[i].(tengo.Object), nil
 }
 
-func unique(args map[string]interface{}) (tengo.Object, error) {
-	slice := args["slice"].([]string)
+func unique(args interop.ArgMap) (tengo.Object, error) {
+	slice, _ := args.GetStringSlice("slice")
 
 	set := hashset.New()
 	for _, item := range slice {
@@ -84,9 +84,9 @@ func unique(args map[string]interface{}) (tengo.Object, error) {
 	return interop.GoStrSliceToTArray(items), nil
 }
 
-func containsString(args map[string]interface{}) (tengo.Object, error) {
-	slice := args["slice"].([]string)
-	input := args["input"].(string)
+func containsString(args interop.ArgMap) (tengo.Object, error) {
+	slice, _ := args.GetStringSlice("slice")
+	input, _ := args.GetString("input")
 
 	for _, item := range slice {
 		if item == input {
@@ -96,9 +96,9 @@ func containsString(args map[string]interface{}) (tengo.Object, error) {
 	return tengo.FalseValue, nil
 }
 
-func iContainsString(args map[string]interface{}) (tengo.Object, error) {
-	slice := args["slice"].([]string)
-	input := args["input"].(string)
+func iContainsString(args interop.ArgMap) (tengo.Object, error) {
+	slice, _ := args.GetStringSlice("slice")
+	input, _ := args.GetString("input")
 
 	for _, item := range slice {
 		if strings.EqualFold(item, input) {

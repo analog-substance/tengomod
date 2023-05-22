@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"regexp"
 
 	"github.com/analog-substance/fileutil"
 	"github.com/analog-substance/tengo/v2"
@@ -23,7 +22,7 @@ func Module(getCompiled func() (*tengo.Compiled, context.Context)) map[string]te
 		getCompiled: getCompiled,
 	}
 
-	return map[string]tengo.Object{
+	mod := map[string]tengo.Object{
 		"write_file": &interop.AdvFunction{
 			Name:    "write_file",
 			NumArgs: interop.ExactArgs(2),
@@ -95,13 +94,19 @@ func Module(getCompiled func() (*tengo.Compiled, context.Context)) map[string]te
 			Value:   m.promptUser,
 		},
 	}
+
+	// for key, value := range stdlib.BuiltinModules["os"] {
+	// 	mod[key] = value
+	// }
+
+	return mod
 }
 
 // writeFile is like the tengo 'os.write_file' function except the file is written with 0644 permissions
 // Represents 'os2.write_file(path string, data string) error'
-func (m *module) writeFile(args map[string]interface{}) (tengo.Object, error) {
-	path := args["path"].(string)
-	data := args["data"].(string)
+func (m *module) writeFile(args interop.ArgMap) (tengo.Object, error) {
+	path, _ := args.GetString("path")
+	data, _ := args.GetString("data")
 
 	err := fileutil.WriteString(path, data)
 	if err != nil {
@@ -113,9 +118,9 @@ func (m *module) writeFile(args map[string]interface{}) (tengo.Object, error) {
 
 // writeFileLines is like the writeFile function except each element in the slice is written on a new line
 // Represents 'os2.write_file_lines(path string, lines []string) error'
-func (m *module) writeFileLines(args map[string]interface{}) (tengo.Object, error) {
-	path := args["path"].(string)
-	lines := args["lines"].([]string)
+func (m *module) writeFileLines(args interop.ArgMap) (tengo.Object, error) {
+	path, _ := args.GetString("path")
+	lines, _ := args.GetStringSlice("lines")
 
 	err := fileutil.WriteLines(path, lines)
 	if err != nil {
@@ -127,8 +132,8 @@ func (m *module) writeFileLines(args map[string]interface{}) (tengo.Object, erro
 
 // readFileLines reads the file and splits the contents by each new line
 // Represents 'os2.read_file_lines(path string) []string|error'
-func (m *module) readFileLines(args map[string]interface{}) (tengo.Object, error) {
-	path := args["path"].(string)
+func (m *module) readFileLines(args interop.ArgMap) (tengo.Object, error) {
+	path, _ := args.GetString("path")
 
 	lines, err := fileutil.ReadLines(path)
 	if err != nil {
@@ -140,10 +145,10 @@ func (m *module) readFileLines(args map[string]interface{}) (tengo.Object, error
 
 // regexReplaceFile reads the file, replaces the contents that match the regex and writes it back to the file.
 // Represents 'os2.regex_replace_file(path string, regex string, replace string) error'
-func (m *module) regexReplaceFile(args map[string]interface{}) (tengo.Object, error) {
-	path := args["path"].(string)
-	re := args["regex"].(*regexp.Regexp)
-	replace := args["replace"].(string)
+func (m *module) regexReplaceFile(args interop.ArgMap) (tengo.Object, error) {
+	path, _ := args.GetString("path")
+	re, _ := args.GetRegex("regex")
+	replace, _ := args.GetString("replace")
 
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -162,8 +167,8 @@ func (m *module) regexReplaceFile(args map[string]interface{}) (tengo.Object, er
 
 // mkdirAll is a simple tengo function wrapper to 'os.MkdirAll' except it sets the directory permissions to 0755
 // Represents 'os2.mkdir_all(paths ...string) error'
-func (m *module) mkdirAll(args map[string]interface{}) (tengo.Object, error) {
-	paths := args["paths"].([]string)
+func (m *module) mkdirAll(args interop.ArgMap) (tengo.Object, error) {
+	paths, _ := args.GetStringSlice("paths")
 	for _, path := range paths {
 		err := os.MkdirAll(path, fileutil.DefaultDirPerms)
 		if err != nil {
@@ -176,9 +181,9 @@ func (m *module) mkdirAll(args map[string]interface{}) (tengo.Object, error) {
 
 // mkdirTemp is a tengo function wrapper to the os.MkdirTemp function
 // Represents 'os2.mkdir_temp(dir string, pattern string) string|error'
-func (m *module) mkdirTemp(args map[string]interface{}) (tengo.Object, error) {
-	dir := args["dir"].(string)
-	pattern := args["pattern"].(string)
+func (m *module) mkdirTemp(args interop.ArgMap) (tengo.Object, error) {
+	dir, _ := args.GetString("dir")
+	pattern, _ := args.GetString("pattern")
 
 	tempDir, err := os.MkdirTemp(dir, pattern)
 	if err != nil {
@@ -192,7 +197,7 @@ func (m *module) mkdirTemp(args map[string]interface{}) (tengo.Object, error) {
 
 // readStdin reads the current process's Stdin if anything was piped to it.
 // Represents 'os2.read_stdin() []string'
-func (m *module) readStdin(args map[string]interface{}) (tengo.Object, error) {
+func (m *module) readStdin(args interop.ArgMap) (tengo.Object, error) {
 	if !fileutil.HasStdin() {
 		return nil, nil
 	}
@@ -208,15 +213,15 @@ func (m *module) readStdin(args map[string]interface{}) (tengo.Object, error) {
 
 // tempChdir changes the current directory, executes the function, then changes the current directory back.
 // Represents 'os2.temp_chdir(dir string, fn func())'
-func (m *module) tempChdir(args map[string]interface{}) (tengo.Object, error) {
+func (m *module) tempChdir(args interop.ArgMap) (tengo.Object, error) {
 	if m.getCompiled == nil {
 		return nil, errors.New("module not setup to run compiled functions from Go code")
 	}
 
 	compiled, _ := m.getCompiled()
 
-	path := args["path"].(string)
-	fn := args["fn"].(*tengo.CompiledFunction)
+	path, _ := args.GetString("path")
+	fn, _ := args.GetCompiledFunc("fn")
 
 	var err error
 	previousDir := ""
@@ -251,10 +256,10 @@ func (m *module) tempChdir(args map[string]interface{}) (tengo.Object, error) {
 
 // copyFiles copies the specified files to the destination.
 // Represents 'os2.copy_files(src string|[]string, dest string) error'
-func (m *module) copyFiles(args map[string]interface{}) (tengo.Object, error) {
-	files, ok := args["src"].([]string)
+func (m *module) copyFiles(args interop.ArgMap) (tengo.Object, error) {
+	files, ok := args.GetStringSlice("src")
 	if !ok {
-		src := args["src"].(string)
+		src, _ := args.GetString("src")
 
 		var err error
 		files, err = doublestar.FilepathGlob(src)
@@ -263,7 +268,7 @@ func (m *module) copyFiles(args map[string]interface{}) (tengo.Object, error) {
 		}
 	}
 
-	dest := args["dest"].(string)
+	dest, _ := args.GetString("dest")
 
 	for _, file := range files {
 		err := fileutil.CopyFile(file, dest)
@@ -277,13 +282,13 @@ func (m *module) copyFiles(args map[string]interface{}) (tengo.Object, error) {
 
 // copyDirs copies the specified directories to the destination.
 // Represents 'os2.copy_dirs(src string|[]string, dest string) error'
-func (m *module) copyDirs(args map[string]interface{}) (tengo.Object, error) {
-	srcDirs, ok := args["src"].([]string)
+func (m *module) copyDirs(args interop.ArgMap) (tengo.Object, error) {
+	srcDirs, ok := args.GetStringSlice("src")
 	if !ok {
-		src := args["src"].(string)
+		src, _ := args.GetString("src")
 		srcDirs = []string{src}
 	}
-	dest := args["dest"].(string)
+	dest, _ := args.GetString("dest")
 
 	if len(srcDirs) > 1 && !fileutil.DirExists(dest) {
 		return interop.GoErrToTErr(fmt.Errorf("%s: No such directory", dest)), nil
@@ -301,8 +306,8 @@ func (m *module) copyDirs(args map[string]interface{}) (tengo.Object, error) {
 
 // promptUser prints a message to Stdout and reads user input
 // Represents 'os2.prompt(msg string) string|error'
-func (m *module) promptUser(args map[string]interface{}) (tengo.Object, error) {
-	msg := args["msg"].(string)
+func (m *module) promptUser(args interop.ArgMap) (tengo.Object, error) {
+	msg, _ := args.GetString("msg")
 
 	fmt.Print(msg)
 

@@ -1,8 +1,6 @@
 package url
 
 import (
-	"net/url"
-
 	"github.com/analog-substance/tengo/v2"
 	"github.com/analog-substance/tengomod/interop"
 )
@@ -20,7 +18,7 @@ func Module() map[string]tengo.Object {
 
 // hostname returns the hostname of the URL
 // Represents 'url.hostname(url string) string|error'
-func hostname(args map[string]interface{}) (tengo.Object, error) {
-	parsedURL := args["url"].(*url.URL)
+func hostname(args interop.ArgMap) (tengo.Object, error) {
+	parsedURL, _ := args.GetURL("url")
 	return interop.GoStrToTStr(parsedURL.Hostname()), nil
 }

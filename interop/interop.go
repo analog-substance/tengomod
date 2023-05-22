@@ -295,11 +295,11 @@ func FuncASSSSRSp(fn func(string, string, string, string) *string) tengo.Callabl
 			StrArg("third"),
 			StrArg("fourth"),
 		},
-		Value: func(args map[string]interface{}) (tengo.Object, error) {
-			s1 := args["first"].(string)
-			s2 := args["second"].(string)
-			s3 := args["third"].(string)
-			s4 := args["fourth"].(string)
+		Value: func(args ArgMap) (tengo.Object, error) {
+			s1, _ := args.GetString("first")
+			s2, _ := args.GetString("second")
+			s3, _ := args.GetString("third")
+			s4, _ := args.GetString("fourth")
 
 			s := fn(s1, s2, s3, s4)
 			if len(*s) > tengo.MaxStringLen {
@@ -322,10 +322,10 @@ func FuncASSSRSp(fn func(string, string, string) *string) tengo.CallableFunc {
 			StrArg("second"),
 			StrArg("third"),
 		},
-		Value: func(args map[string]interface{}) (tengo.Object, error) {
-			s1 := args["first"].(string)
-			s2 := args["second"].(string)
-			s3 := args["third"].(string)
+		Value: func(args ArgMap) (tengo.Object, error) {
+			s1, _ := args.GetString("first")
+			s2, _ := args.GetString("second")
+			s3, _ := args.GetString("third")
 
 			s := fn(s1, s2, s3)
 			if len(*s) > tengo.MaxStringLen {
@@ -348,11 +348,11 @@ func FuncASSSsSRSsp(fn func(string, string, []string, string) *[]string) tengo.C
 			StrSliceArg("third", false),
 			StrArg("fourth"),
 		},
-		Value: func(args map[string]interface{}) (tengo.Object, error) {
-			s1 := args["first"].(string)
-			s2 := args["second"].(string)
-			ss1 := args["third"].([]string)
-			s4 := args["fourth"].(string)
+		Value: func(args ArgMap) (tengo.Object, error) {
+			s1, _ := args.GetString("first")
+			s2, _ := args.GetString("second")
+			ss1, _ := args.GetStringSlice("third")
+			s4, _ := args.GetString("fourth")
 
 			return GoStrSliceToTArray(*fn(s1, s2, ss1, s4)), nil
 		},
@@ -370,10 +370,10 @@ func FuncASSsSRSsp(fn func(string, []string, string) *[]string) tengo.CallableFu
 			StrSliceArg("second", false),
 			StrArg("third"),
 		},
-		Value: func(args map[string]interface{}) (tengo.Object, error) {
-			s1 := args["first"].(string)
-			ss1 := args["second"].([]string)
-			s3 := args["third"].(string)
+		Value: func(args ArgMap) (tengo.Object, error) {
+			s1, _ := args.GetString("first")
+			ss1, _ := args.GetStringSlice("second")
+			s3, _ := args.GetString("third")
 
 			return GoStrSliceToTArray(*fn(s1, ss1, s3)), nil
 		},
@@ -392,11 +392,11 @@ func FuncASSBSRBp(fn func(string, string, bool, string) *bool) tengo.CallableFun
 			BoolArg("third"),
 			StrArg("fourth"),
 		},
-		Value: func(args map[string]interface{}) (tengo.Object, error) {
-			s1 := args["first"].(string)
-			s2 := args["second"].(string)
-			b1 := args["third"].(bool)
-			s4 := args["fourth"].(string)
+		Value: func(args ArgMap) (tengo.Object, error) {
+			s1, _ := args.GetString("first")
+			s2, _ := args.GetString("second")
+			b1, _ := args.GetBool("third")
+			s4, _ := args.GetString("fourth")
 
 			return GoBoolToTBool(*fn(s1, s2, b1, s4)), nil
 		},
@@ -414,10 +414,10 @@ func FuncASBSRBp(fn func(string, bool, string) *bool) tengo.CallableFunc {
 			BoolArg("second"),
 			StrArg("third"),
 		},
-		Value: func(args map[string]interface{}) (tengo.Object, error) {
-			s1 := args["first"].(string)
-			b1 := args["second"].(bool)
-			s3 := args["third"].(string)
+		Value: func(args ArgMap) (tengo.Object, error) {
+			s1, _ := args.GetString("first")
+			b1, _ := args.GetBool("second")
+			s3, _ := args.GetString("third")
 
 			return GoBoolToTBool(*fn(s1, b1, s3)), nil
 		},
@@ -436,11 +436,11 @@ func FuncASSISRIp(fn func(string, string, int, string) *int) tengo.CallableFunc 
 			IntArg("third"),
 			StrArg("fourth"),
 		},
-		Value: func(args map[string]interface{}) (tengo.Object, error) {
-			s1 := args["first"].(string)
-			s2 := args["second"].(string)
-			i1 := args["third"].(int)
-			s4 := args["fourth"].(string)
+		Value: func(args ArgMap) (tengo.Object, error) {
+			s1, _ := args.GetString("first")
+			s2, _ := args.GetString("second")
+			i1, _ := args.GetInt("third")
+			s4, _ := args.GetString("fourth")
 
 			i := fn(s1, s2, i1, s4)
 			return &tengo.Int{Value: int64(*i)}, nil
@@ -459,10 +459,10 @@ func FuncASISRIp(fn func(string, int, string) *int) tengo.CallableFunc {
 			IntArg("second"),
 			StrArg("third"),
 		},
-		Value: func(args map[string]interface{}) (tengo.Object, error) {
-			s1 := args["first"].(string)
-			i1 := args["second"].(int)
-			s3 := args["third"].(string)
+		Value: func(args ArgMap) (tengo.Object, error) {
+			s1, _ := args.GetString("first")
+			i1, _ := args.GetInt("second")
+			s3, _ := args.GetString("third")
 
 			i := fn(s1, i1, s3)
 			return &tengo.Int{Value: int64(*i)}, nil
@@ -479,8 +479,8 @@ func FuncASRSsE(fn func(string) ([]string, error)) tengo.CallableFunc {
 		Args: []AdvArg{
 			StrArg("first"),
 		},
-		Value: func(args map[string]interface{}) (tengo.Object, error) {
-			s1 := args["first"].(string)
+		Value: func(args ArgMap) (tengo.Object, error) {
+			s1, _ := args.GetString("first")
 
 			res, err := fn(s1)
 			if err != nil {
@@ -501,8 +501,8 @@ func FuncASRBE(fn func(string) (bool, error)) tengo.CallableFunc {
 		Args: []AdvArg{
 			StrArg("first"),
 		},
-		Value: func(args map[string]interface{}) (tengo.Object, error) {
-			s1 := args["first"].(string)
+		Value: func(args ArgMap) (tengo.Object, error) {
+			s1, _ := args.GetString("first")
 
 			res, err := fn(s1)
 			if err != nil {
@@ -523,8 +523,8 @@ func FuncASRB(fn func(string) bool) tengo.CallableFunc {
 		Args: []AdvArg{
 			StrArg("first"),
 		},
-		Value: func(args map[string]interface{}) (tengo.Object, error) {
-			s1 := args["first"].(string)
+		Value: func(args ArgMap) (tengo.Object, error) {
+			s1, _ := args.GetString("first")
 			return GoBoolToTBool(fn(s1)), nil
 		},
 	}
@@ -539,8 +539,8 @@ func FuncASvRSsE(fn func(...string) ([]string, error)) tengo.CallableFunc {
 		Args: []AdvArg{
 			StrSliceArg("first", true),
 		},
-		Value: func(args map[string]interface{}) (tengo.Object, error) {
-			strings := args["first"].([]string)
+		Value: func(args ArgMap) (tengo.Object, error) {
+			strings, _ := args.GetStringSlice("first")
 
 			res, err := fn(strings...)
 			if err != nil {
@@ -561,8 +561,8 @@ func FuncASvRB(fn func(...string) bool) tengo.CallableFunc {
 		Args: []AdvArg{
 			StrSliceArg("first", true),
 		},
-		Value: func(args map[string]interface{}) (tengo.Object, error) {
-			strings := args["first"].([]string)
+		Value: func(args ArgMap) (tengo.Object, error) {
+			strings, _ := args.GetStringSlice("first")
 
 			return GoBoolToTBool(fn(strings...)), nil
 		},
@@ -578,8 +578,8 @@ func FuncASvRS(fn func(...string) string) tengo.CallableFunc {
 		Args: []AdvArg{
 			StrSliceArg("first", true),
 		},
-		Value: func(args map[string]interface{}) (tengo.Object, error) {
-			strings := args["first"].([]string)
+		Value: func(args ArgMap) (tengo.Object, error) {
+			strings, _ := args.GetStringSlice("first")
 
 			return GoStrToTStr(fn(strings...)), nil
 		},
@@ -595,8 +595,8 @@ func FuncASRI(fn func(string) int) tengo.CallableFunc {
 		Args: []AdvArg{
 			StrArg("first"),
 		},
-		Value: func(args map[string]interface{}) (tengo.Object, error) {
-			s1 := args["first"].(string)
+		Value: func(args ArgMap) (tengo.Object, error) {
+			s1, _ := args.GetString("first")
 			return GoIntToTInt(fn(s1)), nil
 		},
 	}
@@ -612,7 +612,7 @@ func AliasFunc(obj tengo.Object, name string, src string) *tengo.UserFunction {
 			if err != nil {
 				return nil, err
 			}
-			return fn.(*tengo.UserFunction).Value(args...)
+			return fn.Call(args...)
 		},
 	}
 }

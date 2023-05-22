@@ -16,13 +16,12 @@ func Module() map[string]tengo.Object {
 	}
 }
 
-func newStringSet(args map[string]interface{}) (tengo.Object, error) {
+func newStringSet(args interop.ArgMap) (tengo.Object, error) {
 	set := hashset.New()
 
-	if items, ok := args["items"]; ok {
-		for _, item := range items.([]string) {
-			set.Add(item)
-		}
+	items, _ := args.GetStringSlice("items")
+	for _, item := range items {
+		set.Add(item)
 	}
 
 	return makeStringSet(set), nil

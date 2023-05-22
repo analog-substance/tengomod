@@ -233,12 +233,105 @@ func ArgRange(min int, max int) ArgValidator {
 	}
 }
 
+type ArgMap map[string]interface{}
+
+func (m ArgMap) Exists(name string) bool {
+	_, ok := m[name]
+	return ok
+}
+
+func (m ArgMap) GetString(name string) (string, bool) {
+	val, ok := m[name]
+	if !ok {
+		return "", ok
+	}
+
+	return val.(string), ok
+}
+
+func (m ArgMap) GetStringSlice(name string) ([]string, bool) {
+	val, ok := m[name]
+	if !ok {
+		return []string{}, ok
+	}
+
+	return val.([]string), ok
+}
+
+func (m ArgMap) GetBool(name string) (bool, bool) {
+	val, ok := m[name]
+	if !ok {
+		return false, ok
+	}
+
+	return val.(bool), ok
+}
+
+func (m ArgMap) GetInt(name string) (int, bool) {
+	val, ok := m[name]
+	if !ok {
+		return 0, ok
+	}
+
+	return val.(int), ok
+}
+
+func (m ArgMap) GetIntSlice(name string) ([]int, bool) {
+	val, ok := m[name]
+	if !ok {
+		return []int{}, ok
+	}
+
+	return val.([]int), ok
+}
+
+func (m ArgMap) GetRegex(name string) (*regexp.Regexp, bool) {
+	val, ok := m[name]
+	if !ok {
+		return nil, ok
+	}
+
+	return val.(*regexp.Regexp), ok
+}
+
+func (m ArgMap) GetURL(name string) (*url.URL, bool) {
+	val, ok := m[name]
+	if !ok {
+		return nil, ok
+	}
+
+	return val.(*url.URL), ok
+}
+
+func (m ArgMap) GetCompiledFunc(name string) (*tengo.CompiledFunction, bool) {
+	val, ok := m[name]
+	if !ok {
+		return nil, ok
+	}
+
+	return val.(*tengo.CompiledFunction), ok
+}
+
+func (m ArgMap) GetSlice(name string) ([]interface{}, bool) {
+	val, ok := m[name]
+	if !ok {
+		return []interface{}{}, ok
+	}
+
+	return val.([]interface{}), ok
+}
+
+func (m ArgMap) Get(name string) (interface{}, bool) {
+	val, ok := m[name]
+	return val, ok
+}
+
 type AdvFunction struct {
 	tengo.ObjectImpl
 	Name    string
 	NumArgs ArgValidator
 	Args    []AdvArg
-	Value   func(args map[string]interface{}) (tengo.Object, error)
+	Value   func(args ArgMap) (tengo.Object, error)
 }
 
 // TypeName returns the name of the type.
@@ -275,7 +368,7 @@ func (o *AdvFunction) Call(objs ...tengo.Object) (tengo.Object, error) {
 		}
 	}
 
-	args := make(map[string]interface{})
+	args := make(ArgMap)
 	for i, arg := range o.Args {
 		if i >= len(objs) {
 			break

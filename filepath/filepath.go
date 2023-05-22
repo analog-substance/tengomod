@@ -2,7 +2,6 @@ package filepath
 
 import (
 	"path/filepath"
-	"regexp"
 
 	"github.com/analog-substance/fileutil"
 	"github.com/analog-substance/tengo/v2"
@@ -54,13 +53,9 @@ func Module() map[string]tengo.Object {
 	}
 }
 
-func glob(args map[string]interface{}) (tengo.Object, error) {
-	pattern := args["pattern"].(string)
-
-	var excludeRe *regexp.Regexp
-	if value, ok := args["exclude-pattern"]; ok {
-		excludeRe = value.(*regexp.Regexp)
-	}
+func glob(args interop.ArgMap) (tengo.Object, error) {
+	pattern, _ := args.GetString("pattern")
+	excludeRe, _ := args.GetRegex("exclude-pattern")
 
 	matches, err := doublestar.FilepathGlob(pattern)
 	if err != nil {

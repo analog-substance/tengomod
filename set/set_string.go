@@ -52,8 +52,8 @@ func makeStringSet(set *hashset.Set) *StringSet {
 	return stringSet
 }
 
-func (s *StringSet) add(args map[string]interface{}) (tengo.Object, error) {
-	item := args["item"].(string)
+func (s *StringSet) add(args interop.ArgMap) (tengo.Object, error) {
+	item, _ := args.GetString("item")
 
 	value := tengo.FalseValue
 	if !s.Value.Contains(item) {
@@ -64,8 +64,8 @@ func (s *StringSet) add(args map[string]interface{}) (tengo.Object, error) {
 	return value, nil
 }
 
-func (s *StringSet) addRange(args map[string]interface{}) (tengo.Object, error) {
-	items := args["items"].([]string)
+func (s *StringSet) addRange(args interop.ArgMap) (tengo.Object, error) {
+	items, _ := args.GetStringSlice("items")
 
 	for _, item := range items {
 		s.Value.Add(item)

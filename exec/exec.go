@@ -32,9 +32,9 @@ func Module() map[string]tengo.Object {
 	}
 }
 
-func tengoRunWithSigHandler(args map[string]interface{}) (tengo.Object, error) {
-	cmdName := args["cmd-name"].(string)
-	cmdArgs := args["args"].([]string)
+func tengoRunWithSigHandler(args interop.ArgMap) (tengo.Object, error) {
+	cmdName, _ := args.GetString("cmd-name")
+	cmdArgs, _ := args.GetStringSlice("args")
 
 	err := RunWithSigHandler(cmdName, cmdArgs...)
 	if err != nil {
@@ -44,9 +44,9 @@ func tengoRunWithSigHandler(args map[string]interface{}) (tengo.Object, error) {
 	return nil, nil
 }
 
-func tengoCmd(args map[string]interface{}) (tengo.Object, error) {
-	cmdName := args["cmd-name"].(string)
-	cmdArgs := args["args"].([]string)
+func tengoCmd(args interop.ArgMap) (tengo.Object, error) {
+	cmdName, _ := args.GetString("cmd-name")
+	cmdArgs, _ := args.GetStringSlice("args")
 
 	cmd := exec.CommandContext(context.Background(), cmdName, cmdArgs...)
 
