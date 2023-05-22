@@ -17,29 +17,26 @@ var ErrSignaled error = errors.New("process signaled to close")
 func Module() map[string]tengo.Object {
 	return map[string]tengo.Object{
 		"err_signaled": interop.GoErrToTErr(ErrSignaled),
-		"run_with_sig_handler": &tengo.UserFunction{
-			Name:  "run_with_sig_handler",
-			Value: interop.NewCallable(tengoRunWithSigHandler, interop.WithMinArgs(1)),
+		"run_with_sig_handler": &interop.AdvFunction{
+			Name:    "run_with_sig_handler",
+			NumArgs: interop.MinArgs(1),
+			Args:    []interop.AdvArg{interop.StrArg("cmd-name"), interop.StrSliceArg("args", true)},
+			Value:   tengoRunWithSigHandler,
 		},
-		"cmd": &tengo.UserFunction{
-			Name:  "cmd",
-			Value: interop.NewCallable(tengoCmd, interop.WithMinArgs(1)),
+		"cmd": &interop.AdvFunction{
+			Name:    "cmd",
+			NumArgs: interop.MinArgs(1),
+			Args:    []interop.AdvArg{interop.StrArg("cmd-name"), interop.StrSliceArg("args", true)},
+			Value:   tengoCmd,
 		},
 	}
 }
 
-func tengoRunWithSigHandler(args ...tengo.Object) (tengo.Object, error) {
-	cmdName, err := interop.TStrToGoStr(args[0], "cmd-name")
-	if err != nil {
-		return nil, err
-	}
+func tengoRunWithSigHandler(args map[string]interface{}) (tengo.Object, error) {
+	cmdName := args["cmd-name"].(string)
+	cmdArgs := args["args"].([]string)
 
-	cmdArgs, err := interop.GoTSliceToGoStrSlice(args[1:], "args")
-	if err != nil {
-		return nil, err
-	}
-
-	err = RunWithSigHandler(cmdName, cmdArgs...)
+	err := RunWithSigHandler(cmdName, cmdArgs...)
 	if err != nil {
 		return interop.GoErrToTErr(err), nil
 	}
@@ -47,16 +44,9 @@ func tengoRunWithSigHandler(args ...tengo.Object) (tengo.Object, error) {
 	return nil, nil
 }
 
-func tengoCmd(args ...tengo.Object) (tengo.Object, error) {
-	cmdName, err := interop.TStrToGoStr(args[0], "cmd-name")
-	if err != nil {
-		return nil, err
-	}
-
-	cmdArgs, err := interop.GoTSliceToGoStrSlice(args[1:], "args")
-	if err != nil {
-		return nil, err
-	}
+func tengoCmd(args map[string]interface{}) (tengo.Object, error) {
+	cmdName := args["cmd-name"].(string)
+	cmdArgs := args["args"].([]string)
 
 	cmd := exec.CommandContext(context.Background(), cmdName, cmdArgs...)
 

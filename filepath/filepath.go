@@ -41,9 +41,11 @@ func Module() map[string]tengo.Object {
 			Name:  "ext",
 			Value: stdlib.FuncASRS(filepath.Ext),
 		},
-		"glob": &tengo.UserFunction{
-			Name:  "glob",
-			Value: interop.NewCallable(glob, interop.WithArgRange(1, 2)),
+		"glob": &interop.AdvFunction{
+			Name:    "glob",
+			NumArgs: interop.ArgRange(1, 2),
+			Args:    []interop.AdvArg{interop.StrArg("pattern"), interop.RegexArg("exclude-pattern")},
+			Value:   glob,
 		},
 		"from_slash": &tengo.UserFunction{
 			Name:  "from_slash",
@@ -52,23 +54,12 @@ func Module() map[string]tengo.Object {
 	}
 }
 
-func glob(args ...tengo.Object) (tengo.Object, error) {
-	pattern, err := interop.TStrToGoStr(args[0], "pattern")
-	if err != nil {
-		return nil, err
-	}
+func glob(args map[string]interface{}) (tengo.Object, error) {
+	pattern := args["pattern"].(string)
 
 	var excludeRe *regexp.Regexp
-	if len(args) == 2 {
-		excludePatternArg, err := interop.TStrToGoStr(args[1], "exclude-pattern")
-		if err != nil {
-			return nil, err
-		}
-
-		excludeRe, err = regexp.Compile(excludePatternArg)
-		if err != nil {
-			return nil, err
-		}
+	if value, ok := args["exclude-pattern"]; ok {
+		excludeRe = value.(*regexp.Regexp)
 	}
 
 	matches, err := doublestar.FilepathGlob(pattern)

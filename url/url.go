@@ -9,23 +9,18 @@ import (
 
 func Module() map[string]tengo.Object {
 	return map[string]tengo.Object{
-		"hostname": &tengo.UserFunction{
-			Name:  "hostname",
-			Value: interop.NewCallable(hostname, interop.WithExactArgs(1)),
+		"hostname": &interop.AdvFunction{
+			Name:    "hostname",
+			NumArgs: interop.ExactArgs(1),
+			Args:    []interop.AdvArg{interop.URLArg("url")},
+			Value:   hostname,
 		},
 	}
 }
 
-func hostname(args ...tengo.Object) (tengo.Object, error) {
-	rawURL, err := interop.TStrToGoStr(args[0], "url")
-	if err != nil {
-		return nil, err
-	}
-
-	parsedURL, err := url.Parse(rawURL)
-	if err != nil {
-		return interop.GoErrToTErr(err), nil
-	}
-
+// hostname returns the hostname of the URL
+// Represents 'url.hostname(url string) string|error'
+func hostname(args map[string]interface{}) (tengo.Object, error) {
+	parsedURL := args["url"].(*url.URL)
 	return interop.GoStrToTStr(parsedURL.Hostname()), nil
 }

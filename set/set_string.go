@@ -1,7 +1,9 @@
 package set
 
 import (
+	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/analog-substance/tengo/v2"
 	"github.com/analog-substance/tengomod/interop"
@@ -20,17 +22,25 @@ func makeStringSet(set *hashset.Set) *StringSet {
 	}
 
 	objectMap := map[string]tengo.Object{
-		"add": &tengo.UserFunction{
-			Name:  "add",
-			Value: interop.NewCallable(stringSet.add, interop.WithExactArgs(1)),
+		"add": &interop.AdvFunction{
+			Name:    "add",
+			NumArgs: interop.ExactArgs(1),
+			Args:    []interop.AdvArg{interop.StrArg("item")},
+			Value:   stringSet.add,
 		},
-		"add_range": &tengo.UserFunction{
-			Name:  "add_range",
-			Value: interop.NewCallable(stringSet.addRange, interop.WithExactArgs(1)),
+		"add_range": &interop.AdvFunction{
+			Name: "add_range",
+			// NumArgs: interop.ExactArgs(1),
+			Args:  []interop.AdvArg{interop.StrSliceArg("items", true)},
+			Value: stringSet.addRange,
 		},
-		"sorted_string_slice": &tengo.UserFunction{
-			Name:  "sorted_string_slice",
-			Value: stringSet.sortedStringSlice,
+		"slice": &tengo.UserFunction{
+			Name:  "slice",
+			Value: stringSet.slice,
+		},
+		"sorted_slice": &tengo.UserFunction{
+			Name:  "sorted_slice",
+			Value: stringSet.sortedSlice,
 		},
 	}
 
@@ -42,11 +52,8 @@ func makeStringSet(set *hashset.Set) *StringSet {
 	return stringSet
 }
 
-func (s *StringSet) add(args ...tengo.Object) (tengo.Object, error) {
-	item, err := interop.TStrToGoStr(args[0], "item")
-	if err != nil {
-		return nil, err
-	}
+func (s *StringSet) add(args map[string]interface{}) (tengo.Object, error) {
+	item := args["item"].(string)
 
 	value := tengo.FalseValue
 	if !s.Value.Contains(item) {
@@ -57,11 +64,8 @@ func (s *StringSet) add(args ...tengo.Object) (tengo.Object, error) {
 	return value, nil
 }
 
-func (s *StringSet) addRange(args ...tengo.Object) (tengo.Object, error) {
-	items, err := interop.TArrayToGoStrSlice(args[0], "items")
-	if err != nil {
-		return nil, err
-	}
+func (s *StringSet) addRange(args map[string]interface{}) (tengo.Object, error) {
+	items := args["items"].([]string)
 
 	for _, item := range items {
 		s.Value.Add(item)
@@ -70,7 +74,16 @@ func (s *StringSet) addRange(args ...tengo.Object) (tengo.Object, error) {
 	return nil, nil
 }
 
-func (s *StringSet) sortedStringSlice(args ...tengo.Object) (tengo.Object, error) {
+func (s *StringSet) slice(args ...tengo.Object) (tengo.Object, error) {
+	var slice []string
+	for _, val := range s.Value.Values() {
+		slice = append(slice, val.(string))
+	}
+
+	return interop.GoStrSliceToTArray(slice), nil
+}
+
+func (s *StringSet) sortedSlice(args ...tengo.Object) (tengo.Object, error) {
 	var slice []string
 	for _, val := range s.Value.Values() {
 		slice = append(slice, val.(string))
@@ -88,7 +101,11 @@ func (s *StringSet) TypeName() string {
 
 // String should return a string representation of the type's value.
 func (s *StringSet) String() string {
-	return s.Value.String()
+	var elements []string
+	for _, e := range s.Value.Values() {
+		elements = append(elements, e.(string))
+	}
+	return fmt.Sprintf("[%s]", strings.Join(elements, ", "))
 }
 
 // IsFalsy should return true if the value of the type should be considered
