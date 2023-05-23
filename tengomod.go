@@ -5,6 +5,7 @@ import (
 
 	"github.com/analog-substance/tengo/v2"
 	"github.com/analog-substance/tengomod/exec"
+	"github.com/analog-substance/tengomod/ffuf"
 	"github.com/analog-substance/tengomod/filepath"
 	"github.com/analog-substance/tengomod/log"
 	"github.com/analog-substance/tengomod/nmap"
@@ -32,10 +33,7 @@ var (
 			return slice.Module()
 		},
 		"os2": func(o *ModuleOptions) map[string]tengo.Object {
-			if o.getCompiled != nil {
-				return os2.Module(o.getCompiled)
-			}
-			return os2.Module(nil)
+			return os2.Module(o.getCompiled, o.ctx)
 		},
 		"set": func(_ *ModuleOptions) map[string]tengo.Object {
 			return set.Module()
@@ -49,27 +47,37 @@ var (
 		"log": func(_ *ModuleOptions) map[string]tengo.Object {
 			return log.Module()
 		},
+		"ffuf": func(opt *ModuleOptions) map[string]tengo.Object {
+			return ffuf.Module(opt.ctx)
+		},
 	}
 )
 
 type ModuleOptions struct {
-	getCompiled func() (*tengo.Compiled, context.Context)
+	getCompiled func() *tengo.Compiled
+	ctx         context.Context
 	modules     []string
 }
 
 type ModuleOption func(o *ModuleOptions)
 
-func WithCompiled(compiled *tengo.Compiled, ctx context.Context) ModuleOption {
+func WithCompiled(compiled *tengo.Compiled) ModuleOption {
 	return func(o *ModuleOptions) {
-		o.getCompiled = func() (*tengo.Compiled, context.Context) {
-			return compiled, ctx
+		o.getCompiled = func() *tengo.Compiled {
+			return compiled
 		}
 	}
 }
 
-func WithCompiledFunc(fn func() (*tengo.Compiled, context.Context)) ModuleOption {
+func WithCompiledFunc(fn func() *tengo.Compiled) ModuleOption {
 	return func(o *ModuleOptions) {
 		o.getCompiled = fn
+	}
+}
+
+func WithContext(ctx context.Context) ModuleOption {
+	return func(o *ModuleOptions) {
+		o.ctx = ctx
 	}
 }
 

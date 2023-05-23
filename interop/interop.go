@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/analog-substance/tengo/v2"
+	"github.com/analog-substance/tengomod/types"
 )
 
 func GoTSliceToGoInterfaceSlice(items []tengo.Object) []interface{} {
@@ -270,6 +271,15 @@ func GoErrToTErr(err error) tengo.Object {
 	}
 }
 
+// GoStrToTWarning converts a golang string into tengomod Warning
+func GoStrToTWarning(value string) tengo.Object {
+	return &types.Warning{
+		Value: &tengo.String{
+			Value: value,
+		},
+	}
+}
+
 // GoStrToTStr converts a golang string to a tengo string
 func GoStrToTStr(str string) tengo.Object {
 	return &tengo.String{
@@ -453,7 +463,7 @@ func FuncASSISRIp(fn func(string, string, int, string) *int) tengo.CallableFunc 
 // into tengo CallableFunc type.
 func FuncASISRIp(fn func(string, int, string) *int) tengo.CallableFunc {
 	advFunc := AdvFunction{
-		NumArgs: ExactArgs(4),
+		NumArgs: ExactArgs(3),
 		Args: []AdvArg{
 			StrArg("first"),
 			IntArg("second"),
@@ -598,6 +608,23 @@ func FuncASRI(fn func(string) int) tengo.CallableFunc {
 		Value: func(args ArgMap) (tengo.Object, error) {
 			s1, _ := args.GetString("first")
 			return GoIntToTInt(fn(s1)), nil
+		},
+	}
+	return advFunc.Call
+}
+
+// FuncABR transform a function of 'func(bool)' signature into
+// CallableFunc type.
+func FuncABR(fn func(bool)) tengo.CallableFunc {
+	advFunc := AdvFunction{
+		NumArgs: ExactArgs(1),
+		Args: []AdvArg{
+			BoolArg("first"),
+		},
+		Value: func(args ArgMap) (tengo.Object, error) {
+			b1, _ := args.GetBool("first")
+			fn(b1)
+			return nil, nil
 		},
 	}
 	return advFunc.Call

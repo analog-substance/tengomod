@@ -14,12 +14,14 @@ import (
 )
 
 type module struct {
-	getCompiled func() (*tengo.Compiled, context.Context)
+	getCompiled func() *tengo.Compiled
+	ctx         context.Context
 }
 
-func Module(getCompiled func() (*tengo.Compiled, context.Context)) map[string]tengo.Object {
+func Module(getCompiled func() *tengo.Compiled, ctx context.Context) map[string]tengo.Object {
 	m := &module{
 		getCompiled: getCompiled,
+		ctx:         ctx,
 	}
 
 	mod := map[string]tengo.Object{
@@ -218,7 +220,7 @@ func (m *module) tempChdir(args interop.ArgMap) (tengo.Object, error) {
 		return nil, errors.New("module not setup to run compiled functions from Go code")
 	}
 
-	compiled, _ := m.getCompiled()
+	compiled := m.getCompiled()
 
 	path, _ := args.GetString("path")
 	fn, _ := args.GetCompiledFunc("fn")
