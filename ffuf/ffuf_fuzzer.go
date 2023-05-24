@@ -1,21 +1,29 @@
 package ffuf
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"io"
+	"os"
+	"regexp"
 	"strings"
 
 	ffuf "github.com/analog-substance/ffufwrap"
 	"github.com/analog-substance/tengo/v2"
 	"github.com/analog-substance/tengo/v2/stdlib"
 	"github.com/analog-substance/tengo/v2/stdlib/json"
+	modexec "github.com/analog-substance/tengomod/exec"
 	"github.com/analog-substance/tengomod/interop"
 	"github.com/analog-substance/tengomod/types"
 )
 
 type Fuzzer struct {
 	types.PropObject
-	Value   *ffuf.Fuzzer
-	context context.Context
+	Value *ffuf.Fuzzer
+
+	context         context.Context
+	addJSONWarnings bool
 }
 
 func (f *Fuzzer) TypeName() string {
@@ -192,6 +200,89 @@ func (f *Fuzzer) customArguments(args interop.ArgMap) (tengo.Object, error) {
 
 func (f *Fuzzer) clone(args ...tengo.Object) (tengo.Object, error) {
 	return makeFfufFuzzer(f.context, f.Value.Clone(f.context)), nil
+}
+
+func (f *Fuzzer) run(args ...tengo.Object) (tengo.Object, error) {
+	cmd, err := f.Value.BuildCmd()
+	if err != nil {
+		return interop.GoErrToTErr(err), nil
+	}
+
+	if cmd.Stdout == nil {
+		cmd.Stdout = os.Stdout
+	}
+
+	if cmd.Stdin == nil {
+		cmd.Stdin = os.Stdin
+	}
+
+	errBuf := new(bytes.Buffer)
+	if cmd.Stderr == nil {
+		cmd.Stderr = io.MultiWriter(errBuf, os.Stderr)
+	} else {
+		cmd.Stderr = io.MultiWriter(errBuf, cmd.Stderr)
+	}
+
+	err = modexec.RunCmdWithSigHandler(cmd)
+	if err != nil {
+		return interop.GoErrToTErr(fmt.Errorf("%v: %s", err, errBuf.String())), nil
+	}
+
+	if f.addJSONWarnings {
+		return f.processStderr(errBuf.String()), nil
+	}
+
+	return nil, nil
+}
+
+func (f *Fuzzer) runWithOutput(args ...tengo.Object) (tengo.Object, error) {
+	cmd, err := f.Value.BuildCmd()
+	if err != nil {
+		return interop.GoErrToTErr(err), nil
+	}
+
+	if cmd.Stdin == nil {
+		cmd.Stdin = os.Stdin
+	}
+
+	outBuf := new(bytes.Buffer)
+	if cmd.Stdout == nil {
+		cmd.Stdout = outBuf
+	} else {
+		cmd.Stdout = io.MultiWriter(outBuf, cmd.Stdout)
+	}
+
+	errBuf := new(bytes.Buffer)
+	if cmd.Stderr == nil {
+		cmd.Stderr = errBuf
+	} else {
+		cmd.Stderr = io.MultiWriter(errBuf, cmd.Stderr)
+	}
+
+	err = modexec.RunCmdWithSigHandler(cmd)
+	if err != nil {
+		return interop.GoErrToTErr(fmt.Errorf("%v: %s", err, errBuf.String())), nil
+	}
+
+	if f.addJSONWarnings {
+		return f.processStderr(errBuf.String()), nil
+	}
+
+	return interop.GoStrToTStr(outBuf.String()), nil
+}
+
+func (f *Fuzzer) processStderr(stderr string) tengo.Object {
+	warnRe := regexp.MustCompile(`(?m)\[WARN\]\s*(.*)$`)
+	matches := warnRe.FindAllStringSubmatch(stderr, -1)
+	if len(matches) != 0 {
+		var warnings []tengo.Object
+		for _, match := range matches {
+			warnings = append(warnings, interop.GoStrToTWarning(match[1]))
+		}
+
+		return &tengo.Array{Value: warnings}
+	}
+	return nil
 }
 
 func (f *Fuzzer) aliasFunc(name string, src string) *tengo.UserFunction {
@@ -434,6 +525,10 @@ func makeFfufFuzzer(ctx context.Context, f *ffuf.Fuzzer) *Fuzzer {
 			Name:  "user_agent",
 			Value: fuzzer.funcASRF(f.UserAgent),
 		},
+		"content_type": &tengo.UserFunction{
+			Name:  "content_type",
+			Value: fuzzer.funcASRF(f.ContentType),
+		},
 		"http2": &tengo.UserFunction{
 			Name:  "http2",
 			Value: fuzzer.funcARF(f.HTTP2),
@@ -518,17 +613,34 @@ func makeFfufFuzzer(ctx context.Context, f *ffuf.Fuzzer) *Fuzzer {
 		},
 		"run": &tengo.UserFunction{
 			Name:  "run",
-			Value: stdlib.FuncARE(f.Run),
+			Value: fuzzer.run,
 		},
 		"run_with_output": &tengo.UserFunction{
 			Name:  "run_with_output",
-			Value: stdlib.FuncARSE(f.RunWithOutput),
+			Value: fuzzer.runWithOutput,
+		},
+	}
+
+	properties := map[string]types.Property{
+		"add_json_warnings": {
+			Get: func() tengo.Object {
+				return interop.GoBoolToTBool(fuzzer.addJSONWarnings)
+			},
+			Set: func(o tengo.Object) error {
+				b1, err := interop.TBoolToGoBool(o, "add_json_warnings")
+				if err != nil {
+					return err
+				}
+
+				fuzzer.addJSONWarnings = b1
+				return nil
+			},
 		},
 	}
 
 	fuzzer.PropObject = types.PropObject{
 		ObjectMap:  objectMap,
-		Properties: make(map[string]types.Property),
+		Properties: properties,
 	}
 
 	return fuzzer

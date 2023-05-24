@@ -3,7 +3,7 @@ module github.com/analog-substance/tengomod
 go 1.20
 
 require (
-	github.com/analog-substance/ffufwrap v0.0.1
+	github.com/analog-substance/ffufwrap v0.0.2
 	github.com/analog-substance/fileutil v0.0.2
 	github.com/analog-substance/nmap/v3 v3.0.2
 	github.com/analog-substance/tengo/v2 v2.13.1
