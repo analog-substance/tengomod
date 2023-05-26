@@ -9,6 +9,7 @@ require (
 	github.com/analog-substance/tengo/v2 v2.13.1
 	github.com/bmatcuk/doublestar/v4 v4.6.0
 	github.com/emirpasic/gods v1.18.1
+	github.com/iancoleman/orderedmap v0.2.0
 	github.com/spf13/viper v1.15.0
 )
 
@@ -30,3 +31,5 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/analog-substance/ffufwrap v0.0.2 => /home/parallels/opt/personal/ffufwrap

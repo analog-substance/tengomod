@@ -3,6 +3,7 @@ package ffuf
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -10,12 +11,14 @@ import (
 	"strings"
 
 	ffuf "github.com/analog-substance/ffufwrap"
+	"github.com/analog-substance/fileutil"
 	"github.com/analog-substance/tengo/v2"
 	"github.com/analog-substance/tengo/v2/stdlib"
-	"github.com/analog-substance/tengo/v2/stdlib/json"
+	tengojson "github.com/analog-substance/tengo/v2/stdlib/json"
 	modexec "github.com/analog-substance/tengomod/exec"
 	"github.com/analog-substance/tengomod/interop"
 	"github.com/analog-substance/tengomod/types"
+	"github.com/iancoleman/orderedmap"
 )
 
 type Fuzzer struct {
@@ -24,6 +27,7 @@ type Fuzzer struct {
 
 	context         context.Context
 	addJSONWarnings bool
+	outputFile      string
 }
 
 func (f *Fuzzer) TypeName() string {
@@ -91,8 +95,7 @@ func (f *Fuzzer) funcASSRF(fn func(string, string) *ffuf.Fuzzer) tengo.CallableF
 
 func (f *Fuzzer) funcASvRF(fn func(...string) *ffuf.Fuzzer) tengo.CallableFunc {
 	advFunc := interop.AdvFunction{
-		NumArgs: interop.MinArgs(1),
-		Args:    []interop.AdvArg{interop.StrSliceArg("first", true)},
+		Args: []interop.AdvArg{interop.StrSliceArg("first", true)},
 		Value: func(args interop.ArgMap) (tengo.Object, error) {
 			slice, _ := args.GetStringSlice("first")
 
@@ -168,7 +171,7 @@ func (f *Fuzzer) filterOperator(args interop.ArgMap) (tengo.Object, error) {
 
 func (f *Fuzzer) postJSON(args interop.ArgMap) (tengo.Object, error) {
 	body, _ := args.GetObject("body")
-	bytes, err := json.Encode(body)
+	bytes, err := tengojson.Encode(body)
 	if err != nil {
 		return interop.GoErrToTErr(err), nil
 	}
@@ -199,7 +202,25 @@ func (f *Fuzzer) customArguments(args interop.ArgMap) (tengo.Object, error) {
 }
 
 func (f *Fuzzer) clone(args ...tengo.Object) (tengo.Object, error) {
-	return makeFfufFuzzer(f.context, f.Value.Clone(f.context)), nil
+	fuzzer := makeFfufFuzzer(f.context, f.Value.Clone(f.context))
+
+	fuzzer.addJSONWarnings = f.addJSONWarnings
+	fuzzer.outputFile = f.outputFile
+
+	return fuzzer, nil
+}
+
+func (f *Fuzzer) tengoOutputFile(args interop.ArgMap) (tengo.Object, error) {
+	file, _ := args.GetString("output-file")
+
+	f.outputFile = file
+	f.Value.OutputFile(file)
+	return f, nil
+}
+
+func (f *Fuzzer) tengoAddJSONWarnings(args ...tengo.Object) (tengo.Object, error) {
+	f.addJSONWarnings = true
+	return f, nil
 }
 
 func (f *Fuzzer) run(args ...tengo.Object) (tengo.Object, error) {
@@ -224,12 +245,13 @@ func (f *Fuzzer) run(args ...tengo.Object) (tengo.Object, error) {
 	}
 
 	err = modexec.RunCmdWithSigHandler(cmd)
-	if err != nil {
+	if err != nil && err != modexec.ErrSignaled {
 		return interop.GoErrToTErr(fmt.Errorf("%v: %s", err, errBuf.String())), nil
 	}
 
-	if f.addJSONWarnings {
-		return f.processStderr(errBuf.String()), nil
+	err = f.processOutput(errBuf.String())
+	if err != nil {
+		return interop.GoErrToTErr(err), nil
 	}
 
 	return nil, nil
@@ -264,23 +286,59 @@ func (f *Fuzzer) runWithOutput(args ...tengo.Object) (tengo.Object, error) {
 		return interop.GoErrToTErr(fmt.Errorf("%v: %s", err, errBuf.String())), nil
 	}
 
-	if f.addJSONWarnings {
-		return f.processStderr(errBuf.String()), nil
+	err = f.processOutput(errBuf.String())
+	if err != nil {
+		return interop.GoErrToTErr(err), nil
 	}
 
 	return interop.GoStrToTStr(outBuf.String()), nil
 }
 
-func (f *Fuzzer) processStderr(stderr string) tengo.Object {
+func (f *Fuzzer) processStderr(stderr string) []string {
 	warnRe := regexp.MustCompile(`(?m)\[WARN\]\s*(.*)$`)
 	matches := warnRe.FindAllStringSubmatch(stderr, -1)
 	if len(matches) != 0 {
-		var warnings []tengo.Object
+		var warnings []string
 		for _, match := range matches {
-			warnings = append(warnings, interop.GoStrToTWarning(match[1]))
+			warnings = append(warnings, match[1])
 		}
 
-		return &tengo.Array{Value: warnings}
+		return warnings
+	}
+	return nil
+}
+
+func (f *Fuzzer) processOutput(stderr string) error {
+	if f.outputFile == "" {
+		return nil
+	}
+
+	bytes, err := os.ReadFile(f.outputFile)
+	if err != nil {
+		return err
+	}
+
+	m := orderedmap.New()
+	err = json.Unmarshal(bytes, &m)
+	if err != nil {
+		return err
+	}
+
+	if f.addJSONWarnings {
+		warnings := f.processStderr(stderr)
+		if len(warnings) > 0 {
+			m.Set("warnings", warnings)
+		}
+	}
+
+	bytes, err = json.MarshalIndent(&m, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	err = fileutil.WriteString(f.outputFile, string(bytes))
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -583,9 +641,11 @@ func makeFfufFuzzer(ctx context.Context, f *ffuf.Fuzzer) *Fuzzer {
 			Name:  "debug_log",
 			Value: fuzzer.funcASRF(f.DebugLog),
 		},
-		"output_file": &tengo.UserFunction{
-			Name:  "output_file",
-			Value: fuzzer.funcASRF(f.OutputFile),
+		"output_file": &interop.AdvFunction{
+			Name:    "output_file",
+			NumArgs: interop.ExactArgs(1),
+			Args:    []interop.AdvArg{interop.StrArg("output-file")},
+			Value:   fuzzer.tengoOutputFile,
 		},
 		"output_dir": &tengo.UserFunction{
 			Name:  "output_dir",
@@ -602,10 +662,9 @@ func makeFfufFuzzer(ctx context.Context, f *ffuf.Fuzzer) *Fuzzer {
 			Value: fuzzer.funcARF(f.NoEmptyOutput),
 		},
 		"custom_arguments": &interop.AdvFunction{
-			Name:    "custom_arguments",
-			NumArgs: interop.MinArgs(1),
-			Args:    []interop.AdvArg{interop.StrSliceArg("args", true)},
-			Value:   fuzzer.customArguments,
+			Name:  "custom_arguments",
+			Args:  []interop.AdvArg{interop.StrSliceArg("args", true)},
+			Value: fuzzer.customArguments,
 		},
 		"args": &tengo.UserFunction{
 			Name:  "args",
@@ -619,24 +678,13 @@ func makeFfufFuzzer(ctx context.Context, f *ffuf.Fuzzer) *Fuzzer {
 			Name:  "run_with_output",
 			Value: fuzzer.runWithOutput,
 		},
-	}
-
-	properties := map[string]types.Property{
-		"add_json_warnings": {
-			Get: func() tengo.Object {
-				return interop.GoBoolToTBool(fuzzer.addJSONWarnings)
-			},
-			Set: func(o tengo.Object) error {
-				b1, err := interop.TBoolToGoBool(o, "add_json_warnings")
-				if err != nil {
-					return err
-				}
-
-				fuzzer.addJSONWarnings = b1
-				return nil
-			},
+		"add_json_warnings": &tengo.UserFunction{
+			Name:  "add_json_warnings",
+			Value: fuzzer.tengoAddJSONWarnings,
 		},
 	}
+
+	properties := map[string]types.Property{}
 
 	fuzzer.PropObject = types.PropObject{
 		ObjectMap:  objectMap,
