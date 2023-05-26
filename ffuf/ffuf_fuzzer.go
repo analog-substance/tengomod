@@ -245,13 +245,18 @@ func (f *Fuzzer) run(args ...tengo.Object) (tengo.Object, error) {
 	}
 
 	err = modexec.RunCmdWithSigHandler(cmd)
-	if err != nil && err != modexec.ErrSignaled {
+	signaled := err == modexec.ErrSignaled
+	if err != nil && !signaled {
 		return interop.GoErrToTErr(fmt.Errorf("%v: %s", err, errBuf.String())), nil
 	}
 
 	err = f.processOutput(errBuf.String())
 	if err != nil {
 		return interop.GoErrToTErr(err), nil
+	}
+
+	if signaled {
+		return interop.GoErrToTErr(modexec.ErrSignaled), nil
 	}
 
 	return nil, nil
