@@ -8,6 +8,7 @@ import (
 	"github.com/analog-substance/tengomod/ffuf"
 	"github.com/analog-substance/tengomod/filepath"
 	"github.com/analog-substance/tengomod/log"
+	"github.com/analog-substance/tengomod/net"
 	"github.com/analog-substance/tengomod/nmap"
 	"github.com/analog-substance/tengomod/os2"
 	"github.com/analog-substance/tengomod/set"
@@ -49,6 +50,9 @@ var (
 		},
 		"ffuf": func(opt *ModuleOptions) map[string]tengo.Object {
 			return ffuf.Module(opt.ctx)
+		},
+		"net": func(_ *ModuleOptions) map[string]tengo.Object {
+			return net.Module()
 		},
 	}
 )
