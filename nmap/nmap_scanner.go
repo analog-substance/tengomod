@@ -111,8 +111,7 @@ func (s *NmapScanner) addOptionAD(fn func(time.Duration) nmap.Option) tengo.Call
 // into tengo CallableFunc type.
 func (s *NmapScanner) addOptionASv(fn func(...string) nmap.Option) tengo.CallableFunc {
 	advFunc := interop.AdvFunction{
-		NumArgs: interop.ExactArgs(1),
-		Args:    []interop.AdvArg{interop.StrSliceArg("first", true)},
+		Args: []interop.AdvArg{interop.StrSliceArg("first", true)},
 		Value: func(args interop.ArgMap) (tengo.Object, error) {
 			strings, _ := args.GetStringSlice("first")
 			option := fn(strings...)
