@@ -75,7 +75,7 @@ func Module(getCompiled func() *tengo.Compiled, ctx context.Context) map[string]
 			Name:    "copy_files",
 			NumArgs: interop.ExactArgs(2),
 			Args: []interop.AdvArg{
-				interop.UnionArg("src", interop.StrType, interop.StrSliceType),
+				interop.UnionArg("src", interop.StrSliceType, interop.StrType),
 				interop.StrArg("dest"),
 			},
 			Value: m.copyFiles,
@@ -84,7 +84,7 @@ func Module(getCompiled func() *tengo.Compiled, ctx context.Context) map[string]
 			Name:    "copy_dirs",
 			NumArgs: interop.MinArgs(2),
 			Args: []interop.AdvArg{
-				interop.UnionArg("src", interop.StrType, interop.StrSliceType),
+				interop.UnionArg("src", interop.StrSliceType, interop.StrType),
 				interop.StrArg("dest"),
 			},
 			Value: m.copyDirs,
