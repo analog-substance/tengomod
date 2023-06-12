@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/analog-substance/tengo/v2"
+	"github.com/analog-substance/tengomod/csv"
 	"github.com/analog-substance/tengomod/exec"
 	"github.com/analog-substance/tengomod/ffuf"
 	"github.com/analog-substance/tengomod/filepath"
@@ -53,6 +54,9 @@ var (
 		},
 		"net": func(_ *ModuleOptions) map[string]tengo.Object {
 			return net.Module()
+		},
+		"csv": func(_ *ModuleOptions) map[string]tengo.Object {
+			return csv.Module()
 		},
 	}
 )

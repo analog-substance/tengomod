@@ -11,3 +11,4 @@
 - [viper](viper.md): configuration related functionality. Wrapper around the [viper](https://github.com/spf13/viper) go library with some arsenic related functionality added in.
 - [log](log.md): logging functionality.
 - [net](net.md): simple implementations around the `net` go module.
+- [csv](csv.md): simple wrappers around the `csv` go module.

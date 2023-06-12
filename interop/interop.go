@@ -27,6 +27,18 @@ func GoStrSliceToTArray(slice []string) tengo.Object {
 	}
 }
 
+// GoStrSliceToTArray converts a golang string slice slice ([][]string) into a tengo Array
+func GoStrSliceSliceToTArray(slice [][]string) tengo.Object {
+	var values []tengo.Object
+	for _, s := range slice {
+		values = append(values, GoStrSliceToTArray(s))
+	}
+
+	return &tengo.Array{
+		Value: values,
+	}
+}
+
 // GoIntSliceToTArray converts a golang int slice into a tengo Array
 func GoIntSliceToTArray(slice []int) tengo.Object {
 	var values []tengo.Object
@@ -70,6 +82,22 @@ func TArrayToGoStrSlice(obj tengo.Object, name string) ([]string, error) {
 		return GoTSliceToGoStrSlice(array.Value, name)
 	case *tengo.ImmutableArray:
 		return GoTSliceToGoStrSlice(array.Value, name)
+	default:
+		return nil, tengo.ErrInvalidArgumentType{
+			Name:     name,
+			Expected: "array(compatible)",
+			Found:    obj.TypeName(),
+		}
+	}
+}
+
+// TArrayToGoStrSliceSlice converts a tengo Array into a golang string slice slice ([][]string)
+func TArrayToGoStrSliceSlice(obj tengo.Object, name string) ([][]string, error) {
+	switch array := obj.(type) {
+	case *tengo.Array:
+		return GoTSliceToGoStrSliceSlice(array.Value, name)
+	case *tengo.ImmutableArray:
+		return GoTSliceToGoStrSliceSlice(array.Value, name)
 	default:
 		return nil, tengo.ErrInvalidArgumentType{
 			Name:     name,
@@ -158,6 +186,20 @@ func GoTSliceToGoStrSlice(slice []tengo.Object, name string) ([]string, error) {
 		strSlice = append(strSlice, item)
 	}
 	return strSlice, nil
+}
+
+// GoTSliceToGoStrSliceSlice converts a slice of tengo Objects into a golang string slice slice ([][]string)
+func GoTSliceToGoStrSliceSlice(slice []tengo.Object, name string) ([][]string, error) {
+	var strSliceSlice [][]string
+	for idx, obj := range slice {
+		strSlice, err := TArrayToGoStrSlice(obj, fmt.Sprintf("%s[%d]", name, idx))
+		if err != nil {
+			return nil, err
+		}
+
+		strSliceSlice = append(strSliceSlice, strSlice)
+	}
+	return strSliceSlice, nil
 }
 
 // GoTSliceToGoIntSlice converts a slice of tengo Objects into a golang int slice
