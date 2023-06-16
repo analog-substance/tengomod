@@ -8,6 +8,7 @@ import (
 	"github.com/analog-substance/tengomod/exec"
 	"github.com/analog-substance/tengomod/ffuf"
 	"github.com/analog-substance/tengomod/filepath"
+	"github.com/analog-substance/tengomod/http"
 	"github.com/analog-substance/tengomod/log"
 	"github.com/analog-substance/tengomod/net"
 	"github.com/analog-substance/tengomod/nmap"
@@ -57,6 +58,9 @@ var (
 		},
 		"csv": func(_ *ModuleOptions) map[string]tengo.Object {
 			return csv.Module()
+		},
+		"http": func(_ *ModuleOptions) map[string]tengo.Object {
+			return http.Module()
 		},
 	}
 )

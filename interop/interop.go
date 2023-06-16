@@ -171,6 +171,20 @@ func TArrayToGoIntSlice(obj tengo.Object, name string) ([]int, error) {
 	}
 }
 
+// TBytesToGoByteSlice converts a tengo Object into a golang byte slice
+func TBytesToGoByteSlice(obj tengo.Object, name string) ([]byte, error) {
+	bytes, ok := tengo.ToByteSlice(obj)
+	if !ok {
+		return nil, tengo.ErrInvalidArgumentType{
+			Name:     name,
+			Expected: "bytes(compatible)",
+			Found:    obj.TypeName(),
+		}
+	}
+
+	return bytes, nil
+}
+
 // GoTSliceToGoStrSlice converts a slice of tengo Objects into a golang string slice
 func GoTSliceToGoStrSlice(slice []tengo.Object, name string) ([]string, error) {
 	var strSlice []string

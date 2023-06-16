@@ -34,6 +34,10 @@ var (
 		return TArrayToGoIntSlice(obj, name)
 	}
 
+	ByteSliceType TypeValidator = func(obj tengo.Object, name string) (interface{}, error) {
+		return TBytesToGoByteSlice(obj, name)
+	}
+
 	SliceType TypeValidator = func(obj tengo.Object, name string) (interface{}, error) {
 		return TArrayToGoInterfaceSlice(obj, name)
 	}
@@ -132,6 +136,13 @@ func StrArg(name string) AdvArg {
 	return AdvArg{
 		Name: name,
 		Type: StrType,
+	}
+}
+
+func ByteSliceArg(name string) AdvArg {
+	return AdvArg{
+		Name: name,
+		Type: ByteSliceType,
 	}
 }
 
@@ -398,6 +409,16 @@ func (m ArgMap) GetObject(name string) (tengo.Object, bool) {
 	}
 
 	conv, ok := val.(tengo.Object)
+	return conv, ok
+}
+
+func (m ArgMap) GetByteSlice(name string) ([]byte, bool) {
+	val, ok := m[name]
+	if !ok {
+		return nil, ok
+	}
+
+	conv, ok := val.([]byte)
 	return conv, ok
 }
 
