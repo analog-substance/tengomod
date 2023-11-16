@@ -152,6 +152,17 @@ func (c *HTTPClient) tengoNewRequest(args interop.ArgMap) (tengo.Object, error) 
 	return makeHTTPRequest(req), nil
 }
 
+func (c *HTTPClient) head(args interop.ArgMap) (tengo.Object, error) {
+	u, _ := args.GetString("url")
+
+	req, err := c.newRequest(http.MethodHead, u)
+	if err != nil {
+		return interop.GoErrToTErr(err), nil
+	}
+
+	return c.do(req)
+}
+
 func (c *HTTPClient) get(args interop.ArgMap) (tengo.Object, error) {
 	u, _ := args.GetString("url")
 
@@ -245,6 +256,12 @@ func makeHTTPClient(c *http.Client) *HTTPClient {
 			NumArgs: interop.ExactArgs(1),
 			Args:    []interop.AdvArg{interop.CustomArg("request", &HTTPRequest{})},
 			Value:   client.tengoDo,
+		},
+		"head": &interop.AdvFunction{
+			Name:    "head",
+			NumArgs: interop.ExactArgs(1),
+			Args:    []interop.AdvArg{interop.StrArg("url")},
+			Value:   client.head,
 		},
 		"get": &interop.AdvFunction{
 			Name:    "get",

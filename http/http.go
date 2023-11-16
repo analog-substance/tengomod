@@ -8,6 +8,8 @@ import (
 	"github.com/analog-substance/tengomod/interop"
 )
 
+var defaultClient *HTTPClient = makeHTTPClient(http.DefaultClient)
+
 func Module() map[string]tengo.Object {
 	return map[string]tengo.Object{
 		"method_get": &tengo.String{
@@ -31,7 +33,59 @@ func Module() map[string]tengo.Object {
 		"method_patch": &tengo.String{
 			Value: http.MethodPatch,
 		},
-		"default_client": makeHTTPClient(http.DefaultClient),
+		"default_client": defaultClient,
+		"head": &interop.AdvFunction{
+			Name:    "head",
+			NumArgs: interop.ExactArgs(1),
+			Args:    []interop.AdvArg{interop.StrArg("url")},
+			Value:   defaultClient.head,
+		},
+		"get": &interop.AdvFunction{
+			Name:    "get",
+			NumArgs: interop.ExactArgs(1),
+			Args:    []interop.AdvArg{interop.StrArg("url")},
+			Value:   defaultClient.get,
+		},
+		"post": &interop.AdvFunction{
+			Name:    "post",
+			NumArgs: interop.ArgRange(1, 3),
+			Args: []interop.AdvArg{
+				interop.StrArg("url"),
+				interop.StrArg("contentType"),
+				interop.UnionArg("body", interop.ByteSliceType, interop.ObjectType),
+			},
+			Value: defaultClient.post,
+		},
+		"put": &interop.AdvFunction{
+			Name:    "put",
+			NumArgs: interop.ArgRange(1, 3),
+			Args: []interop.AdvArg{
+				interop.StrArg("url"),
+				interop.StrArg("contentType"),
+				interop.UnionArg("body", interop.ByteSliceType, interop.ObjectType),
+			},
+			Value: defaultClient.put,
+		},
+		"patch": &interop.AdvFunction{
+			Name:    "patch",
+			NumArgs: interop.ArgRange(1, 3),
+			Args: []interop.AdvArg{
+				interop.StrArg("url"),
+				interop.StrArg("contentType"),
+				interop.UnionArg("body", interop.ByteSliceType, interop.ObjectType),
+			},
+			Value: defaultClient.patch,
+		},
+		"delete": &interop.AdvFunction{
+			Name:    "delete",
+			NumArgs: interop.ArgRange(1, 3),
+			Args: []interop.AdvArg{
+				interop.StrArg("url"),
+				interop.StrArg("contentType"),
+				interop.UnionArg("body", interop.ByteSliceType, interop.ObjectType),
+			},
+			Value: defaultClient.delete,
+		},
 		"new_client": &interop.AdvFunction{
 			Name:    "new_client",
 			NumArgs: interop.MaxArgs(1),
