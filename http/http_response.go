@@ -121,6 +121,7 @@ func makeHTTPResponse(r *http.Response) *HTTPResponse {
 		"content_length": types.StaticProperty(interop.GoIntToTInt(int(r.ContentLength))),
 		"status":         types.StaticProperty(interop.GoStrToTStr(r.Status)),
 		"status_code":    types.StaticProperty(interop.GoIntToTInt(r.StatusCode)),
+		"request":        types.StaticProperty(makeHTTPRequest(r.Request)),
 	}
 
 	response.PropObject = types.PropObject{
