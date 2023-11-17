@@ -107,7 +107,7 @@ func TArrayToGoStrSliceSlice(obj tengo.Object, name string) ([][]string, error) 
 	}
 }
 
-// TArrayToGoInterfaceSlice converts a tengo Array into a golang string slice
+// TArrayToGoInterfaceSlice converts a tengo Array into a golang interface slice
 func TArrayToGoInterfaceSlice(obj tengo.Object, name string) ([]interface{}, error) {
 	switch array := obj.(type) {
 	case *tengo.Array:
@@ -130,22 +130,6 @@ func TArrayToGoTSlice(obj tengo.Object, name string) ([]tengo.Object, error) {
 		return array.Value, nil
 	case *tengo.ImmutableArray:
 		return array.Value, nil
-	default:
-		return nil, tengo.ErrInvalidArgumentType{
-			Name:     name,
-			Expected: "array(compatible)",
-			Found:    obj.TypeName(),
-		}
-	}
-}
-
-// TArrayToGoSlice converts a tengo Array into a golang interface slice
-func TArrayToGoSlice(obj tengo.Object, name string) ([]interface{}, error) {
-	switch array := obj.(type) {
-	case *tengo.Array:
-		return GoTSliceToGoInterfaceSlice(array.Value), nil
-	case *tengo.ImmutableArray:
-		return GoTSliceToGoInterfaceSlice(array.Value), nil
 	default:
 		return nil, tengo.ErrInvalidArgumentType{
 			Name:     name,
@@ -190,7 +174,7 @@ func GoTSliceToGoStrSlice(slice []tengo.Object, name string) ([]string, error) {
 	var strSlice []string
 	for idx, obj := range slice {
 		item, ok := tengo.ToString(obj)
-		if !ok {
+		if !ok || obj.TypeName() != "string" {
 			return nil, tengo.ErrInvalidArgumentType{
 				Name:     fmt.Sprintf("%s[%d]", name, idx),
 				Expected: "string(compatible)",
