@@ -28,14 +28,11 @@ func Module(getCompiled func() *tengo.Compiled, ctx context.Context) map[string]
 		"write_file": &interop.AdvFunction{
 			Name:    "write_file",
 			NumArgs: interop.ExactArgs(2),
-			Args:    []interop.AdvArg{interop.StrArg("path"), interop.StrArg("data")},
-			Value:   m.writeFile,
-		},
-		"write_file_lines": &interop.AdvFunction{
-			Name:    "write_file_lines",
-			NumArgs: interop.ExactArgs(2),
-			Args:    []interop.AdvArg{interop.StrArg("path"), interop.StrSliceArg("lines", false)},
-			Value:   m.writeFileLines,
+			Args: []interop.AdvArg{
+				interop.StrArg("path"),
+				interop.UnionArg("data", interop.StrSliceType, interop.StrType),
+			},
+			Value: m.writeFile,
 		},
 		"read_file_lines": &interop.AdvFunction{
 			Name:    "read_file_lines",
@@ -97,34 +94,22 @@ func Module(getCompiled func() *tengo.Compiled, ctx context.Context) map[string]
 		},
 	}
 
-	// for key, value := range stdlib.BuiltinModules["os"] {
-	// 	mod[key] = value
-	// }
-
 	return mod
 }
 
 // writeFile is like the tengo 'os.write_file' function except the file is written with 0644 permissions
-// Represents 'os2.write_file(path string, data string) error'
+// Represents 'os2.write_file(path string, data string|[]string) error'
 func (m *module) writeFile(args interop.ArgMap) (tengo.Object, error) {
 	path, _ := args.GetString("path")
-	data, _ := args.GetString("data")
 
-	err := fileutil.WriteString(path, data)
-	if err != nil {
-		return interop.GoErrToTErr(err), nil
+	var err error
+	if lines, ok := args.GetStringSlice("data"); ok {
+		err = fileutil.WriteLines(path, lines)
+	} else {
+		data, _ := args.GetString("data")
+		err = fileutil.WriteString(path, data)
 	}
 
-	return nil, nil
-}
-
-// writeFileLines is like the writeFile function except each element in the slice is written on a new line
-// Represents 'os2.write_file_lines(path string, lines []string) error'
-func (m *module) writeFileLines(args interop.ArgMap) (tengo.Object, error) {
-	path, _ := args.GetString("path")
-	lines, _ := args.GetStringSlice("lines")
-
-	err := fileutil.WriteLines(path, lines)
 	if err != nil {
 		return interop.GoErrToTErr(err), nil
 	}
