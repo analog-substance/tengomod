@@ -72,7 +72,7 @@ func makeCSVWriter(w *csv.Writer) *CSVWriter {
 		"write_all": &interop.AdvFunction{
 			Name:    "write_all",
 			NumArgs: interop.ExactArgs(1),
-			Args:    []interop.AdvArg{interop.StrSliceArg("rows", false)},
+			Args:    []interop.AdvArg{interop.StrSliceSliceArg("rows", false)},
 			Value:   writer.writeAll,
 		},
 		"flush": &tengo.UserFunction{
