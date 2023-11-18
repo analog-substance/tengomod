@@ -26,21 +26,21 @@ func makeStringSet(set *hashset.Set) *StringSet {
 			Name:    "add",
 			NumArgs: interop.ExactArgs(1),
 			Args:    []interop.AdvArg{interop.StrArg("item")},
-			Value:   stringSet.add,
+			Value:   stringSet.tengoAdd,
 		},
 		"add_range": &interop.AdvFunction{
 			Name: "add_range",
 			// NumArgs: interop.ExactArgs(1),
 			Args:  []interop.AdvArg{interop.StrSliceArg("items", true)},
-			Value: stringSet.addRange,
+			Value: stringSet.tengoAddRange,
 		},
 		"slice": &tengo.UserFunction{
 			Name:  "slice",
-			Value: stringSet.slice,
+			Value: stringSet.tengoSlice,
 		},
 		"sorted_slice": &tengo.UserFunction{
 			Name:  "sorted_slice",
-			Value: stringSet.sortedSlice,
+			Value: stringSet.tengoSortedSlice,
 		},
 	}
 
@@ -52,46 +52,63 @@ func makeStringSet(set *hashset.Set) *StringSet {
 	return stringSet
 }
 
-func (s *StringSet) add(args interop.ArgMap) (tengo.Object, error) {
+func (s *StringSet) tengoAdd(args interop.ArgMap) (tengo.Object, error) {
 	item, _ := args.GetString("item")
 
 	value := tengo.FalseValue
-	if !s.Value.Contains(item) {
-		s.Value.Add(item)
+	if !s.add(item) {
 		value = tengo.TrueValue
 	}
 
 	return value, nil
 }
 
-func (s *StringSet) addRange(args interop.ArgMap) (tengo.Object, error) {
-	items, _ := args.GetStringSlice("items")
-
-	for _, item := range items {
+func (s *StringSet) add(item string) bool {
+	if !s.Value.Contains(item) {
 		s.Value.Add(item)
+		return true
 	}
 
+	return false
+}
+
+func (s *StringSet) tengoAddRange(args interop.ArgMap) (tengo.Object, error) {
+	items, _ := args.GetStringSlice("items")
+
+	s.addRange(items)
 	return nil, nil
 }
 
-func (s *StringSet) slice(args ...tengo.Object) (tengo.Object, error) {
+func (s *StringSet) addRange(items []string) {
+	for _, item := range items {
+		s.Value.Add(item)
+	}
+}
+
+func (s *StringSet) tengoSlice(args ...tengo.Object) (tengo.Object, error) {
+	return interop.GoStrSliceToTArray(s.slice()), nil
+}
+
+func (s *StringSet) slice() []string {
 	var slice []string
 	for _, val := range s.Value.Values() {
 		slice = append(slice, val.(string))
 	}
-
-	return interop.GoStrSliceToTArray(slice), nil
+	return slice
 }
 
-func (s *StringSet) sortedSlice(args ...tengo.Object) (tengo.Object, error) {
+func (s *StringSet) tengoSortedSlice(args ...tengo.Object) (tengo.Object, error) {
+	return interop.GoStrSliceToTArray(s.sortedSlice()), nil
+}
+
+func (s *StringSet) sortedSlice() []string {
 	var slice []string
 	for _, val := range s.Value.Values() {
 		slice = append(slice, val.(string))
 	}
 
 	sort.Strings(slice)
-
-	return interop.GoStrSliceToTArray(slice), nil
+	return slice
 }
 
 // TypeName should return the name of the type.
