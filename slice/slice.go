@@ -23,25 +23,25 @@ func Module() map[string]tengo.Object {
 			Name:    "contains_string",
 			NumArgs: interop.ExactArgs(2),
 			Args:    []interop.AdvArg{interop.StrSliceArg("slice", false), interop.StrArg("input")},
-			Value:   containsString,
+			Value:   tengoContainsString,
 		},
 		"icontains_string": &interop.AdvFunction{
 			Name:    "icontains_string",
 			NumArgs: interop.ExactArgs(2),
 			Args:    []interop.AdvArg{interop.StrSliceArg("slice", false), interop.StrArg("input")},
-			Value:   iContainsString,
+			Value:   tengoIContainsString,
 		},
 		"rand_item": &interop.AdvFunction{
 			Name:    "rand_item",
 			NumArgs: interop.ExactArgs(1),
 			Args:    []interop.AdvArg{interop.SliceArg("slice", false)},
-			Value:   randItem,
+			Value:   tengoRandItem,
 		},
 		"unique": &interop.AdvFunction{
 			Name:    "unique",
 			NumArgs: interop.ExactArgs(1),
 			Args:    []interop.AdvArg{interop.StrSliceArg("slice", false)},
-			Value:   unique,
+			Value:   tengoUnique,
 		},
 	}
 }
@@ -53,23 +53,36 @@ func sortStrings(args interop.ArgMap) (tengo.Object, error) {
 	return interop.GoStrSliceToTArray(slice), nil
 }
 
-func randItem(args interop.ArgMap) (tengo.Object, error) {
+func tengoRandItem(args interop.ArgMap) (tengo.Object, error) {
 	slice, _ := args.GetSlice("slice")
-
-	if len(slice) == 0 {
-		return nil, nil
-	}
 
 	s1 := rand.NewSource(time.Now().UnixNano())
 	r1 := rand.New(s1)
-	i := r1.Intn(len(slice))
 
-	return slice[i].(tengo.Object), nil
+	item := randItem(slice, r1)
+	if item == nil {
+		return nil, nil
+	}
+
+	return item.(tengo.Object), nil
 }
 
-func unique(args interop.ArgMap) (tengo.Object, error) {
+func randItem(slice []interface{}, r1 *rand.Rand) interface{} {
+	if len(slice) == 0 {
+		return nil
+	}
+
+	i := r1.Intn(len(slice))
+	return slice[i]
+}
+
+func tengoUnique(args interop.ArgMap) (tengo.Object, error) {
 	slice, _ := args.GetStringSlice("slice")
 
+	return interop.GoStrSliceToTArray(unique(slice)), nil
+}
+
+func unique(slice []string) []string {
 	set := hashset.New()
 	for _, item := range slice {
 		set.Add(item)
@@ -81,29 +94,47 @@ func unique(args interop.ArgMap) (tengo.Object, error) {
 	}
 	sort.Strings(items)
 
-	return interop.GoStrSliceToTArray(items), nil
+	return items
 }
 
-func containsString(args interop.ArgMap) (tengo.Object, error) {
+func tengoContainsString(args interop.ArgMap) (tengo.Object, error) {
 	slice, _ := args.GetStringSlice("slice")
 	input, _ := args.GetString("input")
 
+	if containsString(slice, input) {
+		return tengo.TrueValue, nil
+	}
+
+	return tengo.FalseValue, nil
+}
+
+func containsString(slice []string, input string) bool {
 	for _, item := range slice {
 		if item == input {
-			return tengo.TrueValue, nil
+			return true
 		}
 	}
-	return tengo.FalseValue, nil
+
+	return false
 }
 
-func iContainsString(args interop.ArgMap) (tengo.Object, error) {
+func tengoIContainsString(args interop.ArgMap) (tengo.Object, error) {
 	slice, _ := args.GetStringSlice("slice")
 	input, _ := args.GetString("input")
 
+	if iContainsString(slice, input) {
+		return tengo.TrueValue, nil
+	}
+
+	return tengo.FalseValue, nil
+}
+
+func iContainsString(slice []string, input string) bool {
 	for _, item := range slice {
 		if strings.EqualFold(item, input) {
-			return tengo.TrueValue, nil
+			return true
 		}
 	}
-	return tengo.FalseValue, nil
+
+	return false
 }
