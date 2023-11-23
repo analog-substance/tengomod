@@ -18,12 +18,12 @@ type IMAP map[string]interface{}
 
 type CallRes struct {
 	t   *testing.T
-	obj interface{}
-	err error
+	Obj interface{}
+	Err error
 }
 
 func (c CallRes) Call(funcName string, args ...interface{}) CallRes {
-	if c.err != nil {
+	if c.Err != nil {
 		return c
 	}
 
@@ -32,11 +32,11 @@ func (c CallRes) Call(funcName string, args ...interface{}) CallRes {
 		oargs = append(oargs, Object(v))
 	}
 
-	switch o := c.obj.(type) {
+	switch o := c.Obj.(type) {
 	case *tengo.BuiltinModule:
 		m, ok := o.Attrs[funcName]
 		if !ok {
-			return CallRes{t: c.t, err: fmt.Errorf(
+			return CallRes{t: c.t, Err: fmt.Errorf(
 				"function not found: %s", funcName)}
 		}
 
@@ -48,31 +48,31 @@ func (c CallRes) Call(funcName string, args ...interface{}) CallRes {
 		} else if m.CanCall() {
 			res, err = m.Call(oargs...)
 		} else {
-			return CallRes{t: c.t, err: fmt.Errorf(
+			return CallRes{t: c.t, Err: fmt.Errorf(
 				"non-callable: %s", funcName)}
 		}
 
-		return CallRes{t: c.t, obj: res, err: err}
+		return CallRes{t: c.t, Obj: res, Err: err}
 	case *tengo.UserFunction:
 		res, err := o.Value(oargs...)
-		return CallRes{t: c.t, obj: res, err: err}
+		return CallRes{t: c.t, Obj: res, Err: err}
 	case *tengo.ImmutableMap:
 		m, ok := o.Value[funcName]
 		if !ok {
-			return CallRes{t: c.t, err: fmt.Errorf("function not found: %s", funcName)}
+			return CallRes{t: c.t, Err: fmt.Errorf("function not found: %s", funcName)}
 		}
 
 		f, ok := m.(*tengo.UserFunction)
 		if !ok {
-			return CallRes{t: c.t, err: fmt.Errorf("non-callable: %s", funcName)}
+			return CallRes{t: c.t, Err: fmt.Errorf("non-callable: %s", funcName)}
 		}
 
 		res, err := f.Value(oargs...)
-		return CallRes{t: c.t, obj: res, err: err}
+		return CallRes{t: c.t, Obj: res, Err: err}
 	default:
-		if obj, ok := c.obj.(tengo.Object); ok && obj.CanCall() {
+		if obj, ok := c.Obj.(tengo.Object); ok && obj.CanCall() {
 			res, err := obj.Call(oargs...)
-			return CallRes{t: c.t, obj: res, err: err}
+			return CallRes{t: c.t, Obj: res, Err: err}
 		}
 
 		panic(fmt.Errorf("unexpected object: %v (%T)", o, o))
@@ -80,24 +80,32 @@ func (c CallRes) Call(funcName string, args ...interface{}) CallRes {
 }
 
 func (c CallRes) Expect(expected interface{}, msgAndArgs ...interface{}) {
-	require.NoError(c.t, c.err, msgAndArgs...)
-	require.Equal(c.t, Object(expected), c.obj, msgAndArgs...)
+	require.NoError(c.t, c.Err, msgAndArgs...)
+	require.Equal(c.t, Object(expected), c.Obj, msgAndArgs...)
 }
 
 func (c CallRes) ExpectError() {
-	require.Error(c.t, c.err)
+	require.Error(c.t, c.Err)
+}
+
+func (c CallRes) ExpectTengoError() {
+	require.IsType(c.t, &tengo.Error{}, c.Obj)
 }
 
 func Module(t *testing.T, moduleName string) CallRes {
 	mod := tengomod.GetModuleMap(tengomod.WithModules(moduleName)).GetBuiltinModule(moduleName)
 	if mod == nil {
-		return CallRes{t: t, err: fmt.Errorf("module not found: %s", moduleName)}
+		return CallRes{t: t, Err: fmt.Errorf("module not found: %s", moduleName)}
 	}
 
-	return CallRes{t: t, obj: mod}
+	return CallRes{t: t, Obj: mod}
 }
 
 func Object(v interface{}) tengo.Object {
+	if v == nil {
+		return nil
+	}
+
 	switch v := v.(type) {
 	case tengo.Object:
 		return v
