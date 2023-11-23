@@ -70,18 +70,56 @@ func (c CallRes) Call(funcName string, args ...interface{}) CallRes {
 		res, err := f.Value(oargs...)
 		return CallRes{t: c.t, Obj: res, Err: err}
 	default:
-		if obj, ok := c.Obj.(tengo.Object); ok && obj.CanCall() {
-			res, err := obj.Call(oargs...)
-			return CallRes{t: c.t, Obj: res, Err: err}
+		obj := c.getCallable(funcName)
+		if obj == nil {
+			panic(fmt.Errorf("unexpected object: %v (%T)", o, o))
 		}
 
-		panic(fmt.Errorf("unexpected object: %v (%T)", o, o))
+		res, err := obj.Call(oargs...)
+		return CallRes{t: c.t, Obj: res, Err: err}
 	}
+}
+
+func (c CallRes) Get(index string) CallRes {
+	res, err := c.Obj.(tengo.Object).IndexGet(&tengo.String{Value: index})
+	return CallRes{t: c.t, Obj: res, Err: err}
+}
+
+func (c CallRes) Set(index string, arg interface{}) CallRes {
+	err := c.Obj.(tengo.Object).IndexSet(&tengo.String{Value: index}, Object(arg))
+	return CallRes{t: c.t, Obj: c.Obj, Err: err}
+}
+
+func (c CallRes) getCallable(funcName string) tengo.Object {
+	obj, ok := c.Obj.(tengo.Object)
+	if !ok {
+		return nil
+	}
+
+	fn, err := obj.IndexGet(&tengo.String{Value: funcName})
+	if err != nil {
+		return nil
+	}
+
+	if fn.CanCall() {
+		return fn
+	}
+
+	if obj.CanCall() {
+		return obj
+	}
+
+	return nil
 }
 
 func (c CallRes) Expect(expected interface{}, msgAndArgs ...interface{}) {
 	require.NoError(c.t, c.Err, msgAndArgs...)
 	require.Equal(c.t, Object(expected), c.Obj, msgAndArgs...)
+}
+
+func (c CallRes) ExpectNil(msgAndArgs ...interface{}) {
+	require.NoError(c.t, c.Err, msgAndArgs...)
+	require.Nil(c.t, c.Obj, msgAndArgs...)
 }
 
 func (c CallRes) ExpectError() {

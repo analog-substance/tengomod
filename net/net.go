@@ -21,5 +21,5 @@ func Module() map[string]tengo.Object {
 func isIP(args interop.ArgMap) (tengo.Object, error) {
 	input, _ := args.GetString("input")
 	parsed := net.ParseIP(input)
-	return interop.GoBoolToTBool(parsed == nil), nil
+	return interop.GoBoolToTBool(parsed != nil), nil
 }
