@@ -75,13 +75,14 @@ func GoStrMapStrToTImmutMap(item map[string]string) tengo.Object {
 	}
 }
 
-// TArrayToGoStrSlice converts a tengo Array into a golang string slice
-func TArrayToGoStrSlice(obj tengo.Object, name string) ([]string, error) {
+// TArrayToGoStrSlice converts a tengo Array into a golang string slice.
+// Strict type ensures the object is a slice of strings.
+func TArrayToGoStrSlice(obj tengo.Object, name string, strictType bool) ([]string, error) {
 	switch array := obj.(type) {
 	case *tengo.Array:
-		return GoTSliceToGoStrSlice(array.Value, name)
+		return GoTSliceToGoStrSlice(array.Value, name, strictType)
 	case *tengo.ImmutableArray:
-		return GoTSliceToGoStrSlice(array.Value, name)
+		return GoTSliceToGoStrSlice(array.Value, name, strictType)
 	default:
 		return nil, tengo.ErrInvalidArgumentType{
 			Name:     name,
@@ -92,12 +93,13 @@ func TArrayToGoStrSlice(obj tengo.Object, name string) ([]string, error) {
 }
 
 // TArrayToGoStrSliceSlice converts a tengo Array into a golang string slice slice ([][]string)
-func TArrayToGoStrSliceSlice(obj tengo.Object, name string) ([][]string, error) {
+// Strict type ensures the object is a slice of string slices.
+func TArrayToGoStrSliceSlice(obj tengo.Object, name string, strictType bool) ([][]string, error) {
 	switch array := obj.(type) {
 	case *tengo.Array:
-		return GoTSliceToGoStrSliceSlice(array.Value, name)
+		return GoTSliceToGoStrSliceSlice(array.Value, name, strictType)
 	case *tengo.ImmutableArray:
-		return GoTSliceToGoStrSliceSlice(array.Value, name)
+		return GoTSliceToGoStrSliceSlice(array.Value, name, strictType)
 	default:
 		return nil, tengo.ErrInvalidArgumentType{
 			Name:     name,
@@ -170,11 +172,12 @@ func TBytesToGoByteSlice(obj tengo.Object, name string) ([]byte, error) {
 }
 
 // GoTSliceToGoStrSlice converts a slice of tengo Objects into a golang string slice
-func GoTSliceToGoStrSlice(slice []tengo.Object, name string) ([]string, error) {
+// Strict type ensures the objects are the string type
+func GoTSliceToGoStrSlice(slice []tengo.Object, name string, strictType bool) ([]string, error) {
 	var strSlice []string
 	for idx, obj := range slice {
 		item, ok := tengo.ToString(obj)
-		if !ok || obj.TypeName() != "string" {
+		if !ok || (strictType && obj.TypeName() != "string") {
 			return nil, tengo.ErrInvalidArgumentType{
 				Name:     fmt.Sprintf("%s[%d]", name, idx),
 				Expected: "string(compatible)",
@@ -187,10 +190,11 @@ func GoTSliceToGoStrSlice(slice []tengo.Object, name string) ([]string, error) {
 }
 
 // GoTSliceToGoStrSliceSlice converts a slice of tengo Objects into a golang string slice slice ([][]string)
-func GoTSliceToGoStrSliceSlice(slice []tengo.Object, name string) ([][]string, error) {
+// Strict type ensures the objects actually string slices
+func GoTSliceToGoStrSliceSlice(slice []tengo.Object, name string, strictType bool) ([][]string, error) {
 	var strSliceSlice [][]string
 	for idx, obj := range slice {
-		strSlice, err := TArrayToGoStrSlice(obj, fmt.Sprintf("%s[%d]", name, idx))
+		strSlice, err := TArrayToGoStrSlice(obj, fmt.Sprintf("%s[%d]", name, idx), strictType)
 		if err != nil {
 			return nil, err
 		}

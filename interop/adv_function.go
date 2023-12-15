@@ -23,11 +23,19 @@ var (
 	}
 
 	StrSliceType TypeValidator = func(obj tengo.Object, name string) (interface{}, error) {
-		return TArrayToGoStrSlice(obj, name)
+		return TArrayToGoStrSlice(obj, name, false)
+	}
+
+	StrictStrSliceType TypeValidator = func(obj tengo.Object, name string) (interface{}, error) {
+		return TArrayToGoStrSlice(obj, name, true)
 	}
 
 	StrSliceSliceType TypeValidator = func(obj tengo.Object, name string) (interface{}, error) {
-		return TArrayToGoStrSliceSlice(obj, name)
+		return TArrayToGoStrSliceSlice(obj, name, false)
+	}
+
+	StrictStrSliceSliceType TypeValidator = func(obj tengo.Object, name string) (interface{}, error) {
+		return TArrayToGoStrSliceSlice(obj, name, true)
 	}
 
 	IntSliceType TypeValidator = func(obj tengo.Object, name string) (interface{}, error) {
@@ -168,10 +176,26 @@ func StrSliceArg(name string, varArgs bool) AdvArg {
 	}
 }
 
+func StrictStrSliceArg(name string, varArgs bool) AdvArg {
+	return AdvArg{
+		Name:    name,
+		Type:    StrictStrSliceType,
+		VarArgs: varArgs,
+	}
+}
+
 func StrSliceSliceArg(name string, varArgs bool) AdvArg {
 	return AdvArg{
 		Name:    name,
 		Type:    StrSliceSliceType,
+		VarArgs: varArgs,
+	}
+}
+
+func StrictStrSliceSliceArg(name string, varArgs bool) AdvArg {
+	return AdvArg{
+		Name:    name,
+		Type:    StrictStrSliceSliceType,
 		VarArgs: varArgs,
 	}
 }
