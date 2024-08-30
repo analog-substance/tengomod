@@ -2,6 +2,7 @@ package http
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -59,6 +60,17 @@ func (r *HTTPRequest) contentType(args interop.ArgMap) (tengo.Object, error) {
 	return nil, nil
 }
 
+func (r *HTTPRequest) clone(_ ...tengo.Object) (tengo.Object, error) {
+	req := r.Value.Clone(context.Background())
+
+	// Make 2 copies of body
+	body, _ := io.ReadAll(r.Value.Body)
+	r.Value.Body = io.NopCloser(bytes.NewBuffer(body))
+	req.Body = io.NopCloser(bytes.NewBuffer(body))
+
+	return makeHTTPRequest(req), nil
+}
+
 func makeHTTPRequest(r *http.Request) *HTTPRequest {
 	request := &HTTPRequest{
 		Value: r,
@@ -82,6 +94,10 @@ func makeHTTPRequest(r *http.Request) *HTTPRequest {
 			NumArgs: interop.ExactArgs(1),
 			Args:    []interop.AdvArg{interop.StrArg("contentType")},
 			Value:   request.contentType,
+		},
+		"clone": &tengo.UserFunction{
+			Name:  "clone",
+			Value: request.clone,
 		},
 	}
 	properties := map[string]types.Property{
@@ -124,6 +140,12 @@ func makeHTTPRequest(r *http.Request) *HTTPRequest {
 			},
 		},
 		"body": {
+			Get: func() tengo.Object {
+				body, _ := io.ReadAll(request.Value.Body)
+				return &tengo.Bytes{
+					Value: body,
+				}
+			},
 			Set: func(o tengo.Object) error {
 				body, ok := tengo.ToByteSlice(o)
 				if !ok {
@@ -134,6 +156,7 @@ func makeHTTPRequest(r *http.Request) *HTTPRequest {
 					}
 				}
 
+				request.Value.ContentLength = int64(len(body))
 				request.Value.Body = io.NopCloser(bytes.NewBuffer(body))
 				return nil
 			},
