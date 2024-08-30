@@ -1,8 +1,12 @@
 package http
 
 import (
+	"bufio"
+	"bytes"
+	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 
 	"github.com/analog-substance/tengo/v2"
 	"github.com/analog-substance/tengomod/interop"
@@ -98,6 +102,12 @@ func Module() map[string]tengo.Object {
 			Args:    []interop.AdvArg{interop.StrArg("method"), interop.StrArg("url")},
 			Value:   newRequest,
 		},
+		"from_file": &interop.AdvFunction{
+			Name:    "from_file",
+			NumArgs: interop.ExactArgs(1),
+			Args:    []interop.AdvArg{interop.StrArg("file")},
+			Value:   fromFile,
+		},
 	}
 }
 
@@ -124,6 +134,29 @@ func newRequest(args interop.ArgMap) (tengo.Object, error) {
 		URL:    reqURL,
 		Header: make(http.Header),
 	}
+
+	return makeHTTPRequest(req), nil
+}
+
+func fromFile(args interop.ArgMap) (tengo.Object, error) {
+	reqFile, _ := args.GetString("file")
+
+	raw, err := os.ReadFile(reqFile)
+	if err != nil {
+		return interop.GoErrToTErr(err), nil
+	}
+
+	req, err := http.ReadRequest(bufio.NewReader(bytes.NewBuffer(raw)))
+	if err != nil {
+		return interop.GoErrToTErr(err), nil
+	}
+
+	u, _ := url.Parse(fmt.Sprintf("%s%s", req.Host, req.RequestURI))
+
+	req.RequestURI = ""
+	req.URL = u
+
+	req.Host = u.Host // Setting this just in case Host header specified http or https
 
 	return makeHTTPRequest(req), nil
 }
