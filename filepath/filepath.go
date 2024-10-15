@@ -3,10 +3,10 @@ package filepath
 import (
 	"path/filepath"
 
-	"github.com/analog-substance/fileutil"
 	"github.com/analog-substance/tengo/v2"
 	"github.com/analog-substance/tengo/v2/stdlib"
 	"github.com/analog-substance/tengomod/interop"
+	"github.com/analog-substance/util/fileutil"
 	"github.com/bmatcuk/doublestar/v4"
 )
 

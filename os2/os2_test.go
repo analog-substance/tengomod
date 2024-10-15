@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/analog-substance/fileutil"
 	"github.com/analog-substance/tengo/v2"
 	"github.com/analog-substance/tengo/v2/require"
 	"github.com/analog-substance/tengomod/internal/test"
+	"github.com/analog-substance/util/fileutil"
 )
 
 func TestOS2(t *testing.T) {
