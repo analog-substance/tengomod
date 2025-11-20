@@ -75,6 +75,30 @@ func GoStrMapStrToTImmutMap(item map[string]string) tengo.Object {
 	}
 }
 
+// GoStrMapInterfaceToTMap converts a golang map[string]interface{} into a tengo Map
+func GoStrMapInterfaceToTMap(item map[string]interface{}) (tengo.Object, error) {
+	values := make(map[string]tengo.Object)
+	for key, value := range item {
+		obj, err := tengo.FromInterface(value)
+		if err != nil {
+			return nil, err
+		}
+
+		values[key] = obj
+	}
+
+	return &tengo.Map{
+		Value: values,
+	}, nil
+}
+
+// GoStrMapInterfaceToTMap converts a golang map[string]interface{} into a tengo Map
+func GoByteSliceToTByteSlice(input []byte) (tengo.Object, error) {
+	return &tengo.Bytes{
+		Value: input,
+	}, nil
+}
+
 // TArrayToGoStrSlice converts a tengo Array into a golang string slice.
 // Strict type ensures the object is a slice of strings.
 func TArrayToGoStrSlice(obj tengo.Object, name string, strictType bool) ([]string, error) {

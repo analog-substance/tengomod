@@ -17,6 +17,7 @@ import (
 	"github.com/analog-substance/tengomod/slice"
 	"github.com/analog-substance/tengomod/url"
 	"github.com/analog-substance/tengomod/viper"
+	"github.com/analog-substance/tengomod/yaml"
 )
 
 type moduleFactory func(*ModuleOptions) map[string]tengo.Object
@@ -61,6 +62,9 @@ var (
 		},
 		"http": func(_ *ModuleOptions) map[string]tengo.Object {
 			return http.Module()
+		},
+		"yaml": func(_ *ModuleOptions) map[string]tengo.Object {
+			return yaml.Module()
 		},
 	}
 )
