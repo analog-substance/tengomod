@@ -46,6 +46,20 @@ func (c *ExecCmd) run(args ...tengo.Object) (tengo.Object, error) {
 	return nil, nil
 }
 
+func (c *ExecCmd) output(args ...tengo.Object) (tengo.Object, error) {
+	output, err := OutputCmdWithSigHandler(c.Value)
+	if err != nil {
+		return interop.GoErrToTErr(err), nil
+	}
+
+	obj, err := interop.GoByteSliceToTByteSlice(output)
+	if err != nil {
+		return interop.GoErrToTErr(err), nil
+	}
+
+	return obj, nil
+}
+
 func (c *ExecCmd) setStdin(args interop.ArgMap) (tengo.Object, error) {
 	file, _ := args.GetString("file")
 
@@ -67,6 +81,10 @@ func makeExecCmd(cmd *exec.Cmd) *ExecCmd {
 		"run": &tengo.UserFunction{
 			Name:  "run",
 			Value: execCmd.run,
+		},
+		"output": &tengo.UserFunction{
+			Name:  "output",
+			Value: execCmd.output,
 		},
 		"set_stdin": &interop.AdvFunction{
 			Name:    "set_stdin",

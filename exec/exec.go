@@ -1,6 +1,7 @@
 package exec
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"os"
@@ -107,4 +108,49 @@ func RunCmdWithSigHandler(cmd *exec.Cmd) error {
 	}
 
 	return nil
+}
+
+func OutputCmdWithSigHandler(cmd *exec.Cmd) ([]byte, error) {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
+
+	// relay trapped signals to the spawned process
+	signaled := false
+	go func() {
+		for sig := range sigs {
+			signaled = true
+			cmd.Process.Signal(sig)
+		}
+	}()
+
+	defer func() {
+		signal.Stop(sigs)
+		close(sigs)
+	}()
+
+	var b bytes.Buffer
+	cmd.Stdout = &b
+
+	if err := cmd.Start(); err != nil {
+		return nil, err
+	}
+
+	if err := cmd.Wait(); err != nil {
+		exiterr, ok := err.(*exec.ExitError)
+		if !ok {
+			return nil, err
+		}
+
+		if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
+			if !signaled {
+				signaled = status.Signaled()
+			}
+		}
+	}
+
+	if signaled {
+		return nil, ErrSignaled
+	}
+
+	return b.Bytes(), nil
 }

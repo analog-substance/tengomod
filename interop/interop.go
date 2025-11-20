@@ -92,7 +92,7 @@ func GoStrMapInterfaceToTMap(item map[string]interface{}) (tengo.Object, error) 
 	}, nil
 }
 
-// GoStrMapInterfaceToTMap converts a golang map[string]interface{} into a tengo Map
+// GoByteSliceToTByteSlice converts a golang map[string]interface{} into a tengo Map
 func GoByteSliceToTByteSlice(input []byte) (tengo.Object, error) {
 	return &tengo.Bytes{
 		Value: input,
